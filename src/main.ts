@@ -1,0 +1,139 @@
+import { Notice, Plugin, TFile, TFolder, normalizePath } from 'obsidian';
+import type { SponsorsManager } from './license/index';
+import { createGitHubSponsors } from './license/github-obsidian';
+import { SPONSORS, onProChange, setProSource } from './pro';
+import { DEFAULT_SETTINGS, BasesTaskRowsSettingTab, normalizeSettings, type BasesTaskRowsSettings } from './settings';
+import { editTaskLine, type TaskEdit } from './task';
+import { TaskRowsView, VIEW_TYPE, viewOptions } from './view';
+import { applyLineEdits, type LineEdit } from './write';
+import type { TaskRow } from './rows';
+
+/** How often to ask the license state whether a check is due. It sends a request only when signed in and due (7 days). */
+const PRO_TICK_MS = 6 * 60 * 60 * 1000;
+
+export interface EditOutcome {
+	written: number;
+	conflicts: number;
+}
+
+/** Text of a new base file that shows the tasks of one folder. */
+export function taskBaseText(folder: string): string {
+	const filter = folder === '/' || folder === '' ? '' : `filters:\n  and:\n    - file.inFolder(${JSON.stringify(folder)})\n`;
+	return `${filter}views:\n  - type: ${VIEW_TYPE}\n    name: Tasks\n    status: open\n    sort: due\n`;
+}
+
+export default class BasesTaskRowsPlugin extends Plugin {
+	settings: BasesTaskRowsSettings = { ...DEFAULT_SETTINGS };
+	/** GitHub Sponsors Pro state. Created in onload; null before that. */
+	pro: SponsorsManager | null = null;
+	/** False when the Bases core plugin is off, so the view could not be registered. */
+	basesReady = false;
+	readonly views = new Set<TaskRowsView>();
+	private settingTab: BasesTaskRowsSettingTab | null = null;
+
+	async onload(): Promise<void> {
+		await this.loadSettings();
+		// No request here: a request needs a GitHub sign in first (Settings, Pro, Sign in with GitHub).
+		const pro = createGitHubSponsors(this.app, this.manifest.id, SPONSORS);
+		pro.init();
+		this.pro = pro;
+		setProSource(pro);
+		this.register(
+			onProChange(() => {
+				this.refreshViews();
+				this.settingTab?.update();
+			}),
+		);
+		this.settingTab = new BasesTaskRowsSettingTab(this.app, this);
+		this.addSettingTab(this.settingTab);
+
+		this.basesReady = this.registerBasesView(VIEW_TYPE, {
+			name: 'Task rows',
+			icon: 'list-checks',
+			factory: (controller, containerEl) => new TaskRowsView(controller, containerEl, this),
+			options: () => viewOptions(),
+		});
+
+		this.addCommand({
+			id: 'create-task-base',
+			name: 'Create a task base for the current folder',
+			callback: () => void this.createTaskBase(),
+		});
+
+		this.app.workspace.onLayoutReady(() => {
+			void pro.refresh();
+			this.registerInterval(window.setInterval(() => void pro.refresh(), PRO_TICK_MS));
+		});
+	}
+
+	onunload(): void {
+		setProSource(null);
+		this.views.clear();
+	}
+
+	/** Pro from the cached GitHub Sponsors answer. Never sends a request. */
+	isPro(): boolean {
+		return this.pro?.isPro() ?? false;
+	}
+
+	async loadSettings(): Promise<void> {
+		this.settings = normalizeSettings(await this.loadData());
+	}
+
+	async saveSettings(): Promise<void> {
+		await this.saveData(this.settings);
+	}
+
+	refreshViews(): void {
+		for (const v of this.views) v.render();
+	}
+
+	/**
+	 * Writes one edit to each row's source line. Each file is changed in one vault.process call, and a line is
+	 * replaced only when it still reads exactly as the view read it. Changed lines are skipped with a notice.
+	 */
+	async editRows(rows: TaskRow[], edit: TaskEdit): Promise<EditOutcome> {
+		const byPath = new Map<string, LineEdit[]>();
+		const style = { style: this.settings.dateStyle };
+		const full: TaskEdit = edit.type === 'done' || edit.type === 'open' ? { ...edit, doneDate: this.settings.doneDate, ...style } : { ...edit, ...style };
+		for (const row of rows) {
+			const next = editTaskLine(row.raw, full);
+			if (next === null || next === row.raw) continue;
+			const list = byPath.get(row.path) ?? [];
+			list.push({ line: row.line, expected: row.raw, next });
+			byPath.set(row.path, list);
+		}
+		let written = 0;
+		let conflicts = 0;
+		for (const [path, edits] of byPath) {
+			const file = this.app.vault.getAbstractFileByPath(path);
+			if (!(file instanceof TFile)) {
+				conflicts += edits.length;
+				continue;
+			}
+			await this.app.vault.process(file, (content) => {
+				const r = applyLineEdits(content, edits);
+				written += r.applied.length;
+				conflicts += r.conflicts.length;
+				return r.content;
+			});
+		}
+		if (conflicts) new Notice(`${conflicts} ${conflicts === 1 ? 'task' : 'tasks'} changed in the note since the view read ${conflicts === 1 ? 'it' : 'them'}, so nothing was written for ${conflicts === 1 ? 'it' : 'them'}. The rows are read again.`);
+		return { written, conflicts };
+	}
+
+	private async createTaskBase(): Promise<void> {
+		const active = this.app.workspace.getActiveFile();
+		const folder = active?.parent ?? this.app.vault.getRoot();
+		const dir = folder instanceof TFolder ? folder.path : '/';
+		const prefix = dir === '/' ? '' : `${dir}/`;
+		let path = normalizePath(`${prefix}Tasks.base`);
+		for (let i = 2; this.app.vault.getAbstractFileByPath(path) && i < 100; i++) path = normalizePath(`${prefix}Tasks ${i}.base`);
+		if (this.app.vault.getAbstractFileByPath(path)) {
+			new Notice('Could not find a free file name for the task base.');
+			return;
+		}
+		const file = await this.app.vault.create(path, taskBaseText(dir));
+		await this.app.workspace.getLeaf(false).openFile(file);
+	}
+}

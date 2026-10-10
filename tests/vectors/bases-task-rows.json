@@ -1,0 +1,437 @@
+{
+ "slug": "bases-task-rows",
+ "module": "bases-task-rows/src/task",
+ "function": "editAndParse",
+ "note": "editAndParse(line, edit) applies one edit (none | done | open | date | today) to one Markdown task line and parses the result. expected = {line, task}: line is the new line (byte-identical outside the changed token; null when the input is not a task), task = {status, done, text, dates, priority 0..5 with 2 = none, tags, recurrence}.",
+ "cases": [
+  {
+   "name": "round trip keeps a Tasks line with priority, recurrence and block id byte for byte",
+   "args": [
+    "  - [ ] Water plants 🔼 🔁 every week ⏳ 2026-10-11 📅 2026-10-12 #home/garden ^water-1",
+    {
+     "type": "none"
+    }
+   ],
+   "expected": {
+    "line": "  - [ ] Water plants 🔼 🔁 every week ⏳ 2026-10-11 📅 2026-10-12 #home/garden ^water-1",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Water plants",
+     "dates": {
+      "due": "2026-10-12",
+      "scheduled": "2026-10-11"
+     },
+     "priority": 3,
+     "tags": [
+      "home/garden"
+     ],
+     "recurrence": "every week"
+    }
+   }
+  },
+  {
+   "name": "tick adds a done date to a line that has a due date (auto)",
+   "args": [
+    "- [ ] Pay rent 📅 2026-10-12 #home",
+    {
+     "type": "done",
+     "today": "2026-10-10"
+    }
+   ],
+   "expected": {
+    "line": "- [x] Pay rent 📅 2026-10-12 #home ✅ 2026-10-10",
+    "task": {
+     "status": "x",
+     "done": true,
+     "text": "Pay rent",
+     "dates": {
+      "due": "2026-10-12",
+      "done": "2026-10-10"
+     },
+     "priority": 2,
+     "tags": [
+      "home"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "tick with done date never only flips the status character",
+   "args": [
+    "- [ ] Pay rent 📅 2026-10-12 #home",
+    {
+     "type": "done",
+     "today": "2026-10-10",
+     "doneDate": "never"
+    }
+   ],
+   "expected": {
+    "line": "- [x] Pay rent 📅 2026-10-12 #home",
+    "task": {
+     "status": "x",
+     "done": true,
+     "text": "Pay rent",
+     "dates": {
+      "due": "2026-10-12"
+     },
+     "priority": 2,
+     "tags": [
+      "home"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "tick a plain task in auto mode adds nothing",
+   "args": [
+    "* [ ] Buy milk",
+    {
+     "type": "done",
+     "today": "2026-10-10"
+    }
+   ],
+   "expected": {
+    "line": "* [x] Buy milk",
+    "task": {
+     "status": "x",
+     "done": true,
+     "text": "Buy milk",
+     "dates": {},
+     "priority": 2,
+     "tags": [],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "untick removes the done date",
+   "args": [
+    "- [x] Ship v2 ⏫ ✅ 2026-10-01 #work ^ship",
+    {
+     "type": "open"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Ship v2 ⏫ #work ^ship",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Ship v2",
+     "dates": {},
+     "priority": 4,
+     "tags": [
+      "work"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "Dataview due field changes only the date",
+   "args": [
+    "- [ ] Call Ana [due:: 2026-10-09] [priority:: high] #people",
+    {
+     "type": "date",
+     "field": "due",
+     "value": "2026-10-20"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Call Ana [due:: 2026-10-20] [priority:: high] #people",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Call Ana",
+     "dates": {
+      "due": "2026-10-20"
+     },
+     "priority": 4,
+     "tags": [
+      "people"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "Dataview line gets a Dataview completion field on tick",
+   "args": [
+    "- [ ] Call Ana [due:: 2026-10-09] #people",
+    {
+     "type": "done",
+     "today": "2026-10-10"
+    }
+   ],
+   "expected": {
+    "line": "- [x] Call Ana [due:: 2026-10-09] #people [completion:: 2026-10-10]",
+    "task": {
+     "status": "x",
+     "done": true,
+     "text": "Call Ana",
+     "dates": {
+      "due": "2026-10-09",
+      "done": "2026-10-10"
+     },
+     "priority": 2,
+     "tags": [
+      "people"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "round parentheses Dataview field is read and removed",
+   "args": [
+    "- [ ] (due:: 2026-11-01) Renew passport",
+    {
+     "type": "date",
+     "field": "due",
+     "value": null
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Renew passport",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Renew passport",
+     "dates": {},
+     "priority": 2,
+     "tags": [],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "CRLF line keeps its carriage return after a new due date",
+   "args": [
+    "- [ ] Plain task\r",
+    {
+     "type": "date",
+     "field": "due",
+     "value": "2026-12-01"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Plain task 📅 2026-12-01\r",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Plain task",
+     "dates": {
+      "due": "2026-12-01"
+     },
+     "priority": 2,
+     "tags": [],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "new due date goes before the block id",
+   "args": [
+    "- [ ] Send invoice #money ^inv-7",
+    {
+     "type": "date",
+     "field": "due",
+     "value": "2026-10-15",
+     "style": "emoji"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Send invoice #money 📅 2026-10-15 ^inv-7",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Send invoice",
+     "dates": {
+      "due": "2026-10-15"
+     },
+     "priority": 2,
+     "tags": [
+      "money"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "new due date on a plain line uses the Dataview style when asked",
+   "args": [
+    "- [ ] Send invoice",
+    {
+     "type": "date",
+     "field": "due",
+     "value": "2026-10-15",
+     "style": "dataview"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Send invoice [due:: 2026-10-15]",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Send invoice",
+     "dates": {
+      "due": "2026-10-15"
+     },
+     "priority": 2,
+     "tags": [],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "move to today changes the scheduled date when there is no due date",
+   "args": [
+    "> - [ ] Quoted task ⏳ 2026-10-03",
+    {
+     "type": "today",
+     "today": "2026-10-10"
+    }
+   ],
+   "expected": {
+    "line": "> - [ ] Quoted task ⏳ 2026-10-10",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Quoted task",
+     "dates": {
+      "scheduled": "2026-10-10"
+     },
+     "priority": 2,
+     "tags": [],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "move to today adds a due date to an undated task",
+   "args": [
+    "1. [ ] Numbered task #errand",
+    {
+     "type": "today",
+     "today": "2026-10-10"
+    }
+   ],
+   "expected": {
+    "line": "1. [ ] Numbered task #errand 📅 2026-10-10",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Numbered task",
+     "dates": {
+      "due": "2026-10-10"
+     },
+     "priority": 2,
+     "tags": [
+      "errand"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "tags skip pure numbers and code spans",
+   "args": [
+    "- [ ] Fix bug #123 in `#notatag` for #work/backend",
+    {
+     "type": "none"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Fix bug #123 in `#notatag` for #work/backend",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Fix bug #123 in `#notatag` for",
+     "dates": {},
+     "priority": 2,
+     "tags": [
+      "work/backend"
+     ],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "cancelled status counts as closed",
+   "args": [
+    "- [-] Old idea ❌ 2026-10-02",
+    {
+     "type": "none"
+    }
+   ],
+   "expected": {
+    "line": "- [-] Old idea ❌ 2026-10-02",
+    "task": {
+     "status": "-",
+     "done": true,
+     "text": "Old idea",
+     "dates": {
+      "cancelled": "2026-10-02"
+     },
+     "priority": 2,
+     "tags": [],
+     "recurrence": null
+    }
+   }
+  },
+  {
+   "name": "a list item without a checkbox is not a task",
+   "args": [
+    "- just a note",
+    {
+     "type": "done",
+     "today": "2026-10-10"
+    }
+   ],
+   "expected": {
+    "line": null,
+    "task": null
+   }
+  },
+  {
+   "name": "an empty checkbox pair is not a task",
+   "args": [
+    "- [] not a task",
+    {
+     "type": "none"
+    }
+   ],
+   "expected": {
+    "line": null,
+    "task": null
+   }
+  },
+  {
+   "name": "alternate due emoji 📆 is read and kept",
+   "args": [
+    "- [ ] Alt emoji 📆 2026-10-30",
+    {
+     "type": "date",
+     "field": "due",
+     "value": "2026-10-31"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Alt emoji 📆 2026-10-31",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Alt emoji",
+     "dates": {
+      "due": "2026-10-31"
+     },
+     "priority": 2,
+     "tags": [],
+     "recurrence": null
+    }
+   }
+  }
+ ]
+}
