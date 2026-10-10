@@ -86,6 +86,8 @@ export class TaskRowsView extends BasesView {
 				if (this.paths.has(file.path)) this.schedule();
 			}),
 		);
+		// A view loaded again after an unload has an empty table (onunload clears it): draw it again.
+		if (this.paths.size > 0) this.schedule(0);
 	}
 
 	onunload(): void {

@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.0.2
+
+### Patch Changes
+
+- b09257c: After a plugin update or reload with a base open, the view now runs the new plugin code. Before, Bases kept the old view, so a Pro change did not redraw it until the tab was opened again.
+
 ## 1.0.1
 
 ### Patch Changes

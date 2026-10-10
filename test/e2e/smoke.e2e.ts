@@ -83,6 +83,18 @@ describe(`${pluginId} smoke test`, function () {
 		await waitRows(151);
 	});
 
+	it('after a plugin reload with the base open, the view runs the new plugin code and follows note edits', async function () {
+		const before = await readNote(SITE);
+		await openBase('All tasks.base', 151);
+		expect((await reloadPlugin(pluginId)).errors).toEqual([]);
+		// viewState() only sees views of the loaded plugin, so a stale view of the old code times out here.
+		await waitRows(151);
+		await obsidianPage.write(SITE, `${before}\n- [ ] Added after the reload 📅 2026-10-12\n`);
+		await waitRows(152);
+		await obsidianPage.write(SITE, before);
+		await waitRows(151);
+	});
+
 	it('without Pro shows the first 200 tasks and says how many it hides', async function () {
 		const many = Array.from({ length: 230 }, (_, i) => `- [ ] Task ${i} 📅 2026-11-${String((i % 28) + 1).padStart(2, '0')}`).join('\n');
 		await obsidianPage.write(`${DIR}/Cap/Many.md`, `# Many\n${many}\n`);

@@ -61,6 +61,7 @@ export default class BasesTaskRowsPlugin extends Plugin {
 		});
 
 		this.app.workspace.onLayoutReady(() => {
+			void this.reopenStaleBases();
 			void pro.refresh();
 			this.registerInterval(window.setInterval(() => void pro.refresh(), PRO_TICK_MS));
 		});
@@ -69,6 +70,24 @@ export default class BasesTaskRowsPlugin extends Plugin {
 	onunload(): void {
 		setProSource(null);
 		this.views.clear();
+	}
+
+	/**
+	 * After a plugin update or reload, Bases keeps showing the task views of the old plugin code, and they stop
+	 * following note edits. This opens each such base tab again, so its view runs the current code. A first start finds none.
+	 */
+	async reopenStaleBases(): Promise<number> {
+		let n = 0;
+		for (const leaf of this.app.workspace.getLeavesOfType('bases')) {
+			const el = leaf.view.containerEl;
+			const stale = el.querySelector('.btr-view') !== null && ![...this.views].some((v) => el.contains(v.rootEl));
+			if (!stale) continue;
+			const state = leaf.getViewState();
+			await leaf.setViewState({ type: 'empty' });
+			await leaf.setViewState(state);
+			n++;
+		}
+		return n;
 	}
 
 	/** Pro from the cached GitHub Sponsors answer. Never sends a request. */
