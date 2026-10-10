@@ -1,5 +1,5 @@
 // The "Task rows" Bases view: one row per checklist task in the notes the base selects.
-import { BasesView, Keymap, Notice, TFile, moment, setIcon, type BasesAllOptions, type QueryController } from 'obsidian';
+import { BasesView, Keymap, Notice, TFile, setIcon, type BasesAllOptions, type QueryController } from 'obsidian';
 import { isPro } from './pro';
 import { FREE_LIMIT, arrangeRows, bucketOf, collectTasks, priorityText, type GroupKey, type SortKey, type StatusFilter, type TaskRow } from './rows';
 import type { TaskEdit } from './task';
@@ -48,7 +48,9 @@ export interface Timing {
 	rows: number;
 }
 
-const today = (): string => moment().format('YYYY-MM-DD');
+const pad2 = (n: number): string => String(n).padStart(2, '0');
+/** Local date as YYYY-MM-DD. Plain Date, so the code does not depend on the moment types. */
+const today = (d = new Date()): string => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
 export class TaskRowsView extends BasesView {
 	type = VIEW_TYPE;
