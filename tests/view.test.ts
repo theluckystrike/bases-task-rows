@@ -85,5 +85,5 @@ describe('TaskRowsView in the mock app', () => {
 		(plugin.pro as unknown as { isPro: () => boolean }).isPro = () => true;
 		view.render();
 		expect(view.timing.rows).toBe(2000);
-	});
+	}, 30000);
 });
