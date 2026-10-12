@@ -86,4 +86,34 @@ describe('TaskRowsView in the mock app', () => {
 		view.render();
 		expect(view.timing.rows).toBe(2000);
 	}, 30000);
+
+	it('reads the rows again when the metadata cache catches up after a write', async () => {
+		const note = '- [ ] A\n- [ ] B\n- [ ] C\n';
+		const { app, view } = await setup({ 'm.md': note }, { status: 'all', sort: 'file' });
+		const file = app.vault.getFileByPath('m.md')!;
+		const cache = (app.metadataCache as unknown as { cache__: Map<string, unknown> }).cache__;
+		const old = cache.get('m.md');
+		// In the real app the cache parses a changed note later than the vault write.
+		await app.vault.modify(file, `- [ ] New\n${note}`);
+		const fresh = cache.get('m.md');
+		cache.set('m.md', old);
+		await view.reload();
+		(app.metadataCache as unknown as { setCache__: (p: string, c: unknown) => void }).setCache__('m.md', fresh);
+		await view.reload();
+		expect(view.rows.map((r) => r.info.text)).toEqual(['New', 'A', 'B', 'C']);
+	});
+
+	it('drops a selection when lines above it move, so a bulk action never edits another task', async () => {
+		const note = '- [ ] A\n- [ ] B\n- [ ] C\n';
+		const { app, view, el, plugin } = await setup({ 'm.md': note }, { status: 'all', sort: 'file' });
+		(plugin.pro as unknown as { isPro: () => boolean }).isPro = () => true;
+		view.render();
+		view.selected.add('m.md#2');
+		const file = app.vault.getFileByPath('m.md')!;
+		await app.vault.modify(file, `- [ ] New\n${note}`);
+		await view.reload();
+		el.querySelector<HTMLButtonElement>('button.btr-bulk-done')!.click();
+		await new Promise((r) => setTimeout(r, 50));
+		expect(await app.vault.read(file)).toBe(`- [ ] New\n${note}`);
+	});
 });

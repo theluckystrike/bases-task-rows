@@ -36,6 +36,8 @@ export function viewOptions(): BasesAllOptions[] {
 interface Cached {
 	mtime: number;
 	size: number;
+	/** The metadata cache entry the rows came from. The cache can parse a note after the write, with new line numbers. */
+	meta: unknown;
 	rows: TaskRow[];
 }
 
@@ -125,9 +127,10 @@ export class TaskRowsView extends BasesView {
 		for (const p of [...this.cache.keys()]) if (!paths.has(p)) this.cache.delete(p);
 		this.paths = paths;
 		this.rows = rows;
+		const before = this.byId;
 		this.byId = new Map(rows.map((r) => [r.id, r]));
-		const ids = new Set(rows.map((r) => r.id));
-		for (const id of [...this.selected]) if (!ids.has(id)) this.selected.delete(id);
+		// An id is path#line. When lines above a task move, the id points to another line, so the selection goes.
+		for (const id of [...this.selected]) if (this.byId.get(id)?.raw !== before.get(id)?.raw || !this.byId.has(id)) this.selected.delete(id);
 		this.timing.collect = performance.now() - t0;
 		this.render();
 	}
@@ -137,7 +140,7 @@ export class TaskRowsView extends BasesView {
 		const items = (meta?.listItems ?? []).filter((i) => i.task !== undefined);
 		if (!items.length) return [];
 		const hit = this.cache.get(file.path);
-		if (hit && hit.mtime === file.stat.mtime && hit.size === file.stat.size) return hit.rows;
+		if (hit && hit.mtime === file.stat.mtime && hit.size === file.stat.size && hit.meta === meta) return hit.rows;
 		const content = await this.app.vault.cachedRead(file);
 		const rows = collectTasks(
 			file.path,
@@ -146,7 +149,7 @@ export class TaskRowsView extends BasesView {
 			items.map((i) => ({ line: i.position.start.line, task: i.task })),
 			(meta?.headings ?? []).map((h) => ({ line: h.position.start.line, heading: h.heading })),
 		);
-		this.cache.set(file.path, { mtime: file.stat.mtime, size: file.stat.size, rows });
+		this.cache.set(file.path, { mtime: file.stat.mtime, size: file.stat.size, meta, rows });
 		return rows;
 	}
 

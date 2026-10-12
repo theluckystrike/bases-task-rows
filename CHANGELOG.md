@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.1.1
+
+### Patch Changes
+
+- b003a8d: Complete selected no longer changes cancelled or done tasks or adds a second next occurrence, a selection clears when lines above it move, and the view reads a note again when the metadata cache catches up after a write.
+
 ## 1.1.0
 
 ### Minor Changes

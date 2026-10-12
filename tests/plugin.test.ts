@@ -89,4 +89,21 @@ describe('BasesTaskRowsPlugin', () => {
 		expect(taskBaseText('Projects')).toBe('filters:\n  and:\n    - file.inFolder("Projects")\nviews:\n  - type: task-rows\n    name: Tasks\n    status: open\n    sort: due\n');
 		expect(taskBaseText('/')).not.toContain('filters');
 	});
+
+	it('a done edit leaves closed tasks alone: no cancelled task turns done and no second next occurrence', async () => {
+		const note = '# Plan\n- [-] Dropped 📅 2026-10-01\n- [x] Water plants 🔁 every week 📅 2026-10-01\n';
+		const { app, plugin } = await makePlugin({ 'Plan.md': note });
+		plugin.isPro = () => true;
+		const out = await plugin.editRows(rowsOf(note), { type: 'done', today: '2026-10-10' });
+		expect(out).toEqual({ written: 0, conflicts: 0 });
+		expect(await app.vault.read(app.vault.getFileByPath('Plan.md')!)).toBe(note);
+	});
+
+	it('an open edit leaves open tasks alone', async () => {
+		const note = '# Plan\n- [ ] Pay rent ✅ 2026-10-01\n- [ ] Call Ana\n';
+		const { app, plugin } = await makePlugin({ 'Plan.md': note });
+		const out = await plugin.editRows(rowsOf(note), { type: 'open' });
+		expect(out).toEqual({ written: 0, conflicts: 0 });
+		expect(await app.vault.read(app.vault.getFileByPath('Plan.md')!)).toBe(note);
+	});
 });

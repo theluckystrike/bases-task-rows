@@ -118,6 +118,8 @@ export default class BasesTaskRowsPlugin extends Plugin {
 		// After a done tick of a recurring task, the next occurrence goes on the line below (Pro).
 		const inserts = new Map<string, { after: number; text: string }[]>();
 		for (const row of rows) {
+			// A bulk complete can hold closed rows: a cancelled task must not turn done, and a done recurring task must not repeat again.
+			if ((edit.type === 'done' && row.info.done) || (edit.type === 'open' && !row.info.done)) continue;
 			const next = editTaskLine(row.raw, full);
 			if (next === null || next === row.raw) continue;
 			const list = byPath.get(row.path) ?? [];

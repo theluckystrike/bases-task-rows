@@ -4,7 +4,7 @@ Bases Task Rows adds a "Task rows" view to Bases. It shows each checklist task i
 
 Core Bases reads note properties, not the lines inside a note. It understands the date format of the Tasks plugin (`📅 2026-10-12`) and Dataview fields (`[due:: 2026-10-12]`), so it works with the notes you already have.
 
-The view, the done box, sorting, filtering and up to 200 tasks per view are free. Pro adds every task past 200, groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
+The view, the done box, sorting, filtering and up to 200 tasks per view are free. Pro removes the limit of 200 tasks and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
 
 ## Features
 
@@ -12,7 +12,7 @@ The view, the done box, sorting, filtering and up to 200 tasks per view are free
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/task-rows.png" alt="A base with 150 tasks from 30 notes, one row per task, with due date, scheduled date, priority, tags, note and heading" width="720">
 
-The base decides which notes count, with its normal filters, for example "in the folder Projects" or "has the tag #client". The view then lists every `- [ ]` and `- [x]` line in those notes. A task-like line inside a code block does not count.
+The base decides which notes count, with its normal filters, for example "in the folder Projects" or "has the tag #client". The view then lists the task lines, such as `- [ ]` and `- [x]`, in those notes. A task-like line inside a code block does not count.
 
 Select the task text or the note name to open the note at that line.
 
@@ -20,9 +20,9 @@ Select the task text or the note name to open the note at that line.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/bases-task-rows.gif" alt="Ticking two tasks in the Task rows view, and the source note shows the x and the done date" width="720">
 
-Tick the box and the plugin changes `[ ]` to `[x]` in the source line. If the line already has a date, it also adds a done date (`✅ 2026-10-10`, or `[completion:: 2026-10-10]` on a Dataview line), the same way the Tasks plugin does. Untick and it goes away.
+Tick the box and the plugin changes `[ ]` to `[x]` in the source line. If the line already has a date, it also adds a done date (`✅ 2026-10-10`, or `[completion:: 2026-10-10]` on a Dataview line), the same way the Tasks plugin does. Untick and the done date goes away, unless the done date setting is Never.
 
-Before it writes, the plugin checks that the line in the note is still exactly the line it read. If that line changed in the meantime, nothing is written. A notice tells you, and the view reads the note again. Other lines of the note keep every character, including Windows line ends.
+Before it writes, the plugin checks that the line in the note is still exactly the line it read. If that line changed in the meantime, nothing is written. A notice tells you, and the view reads the note again. The other lines of the note do not change, and Windows line ends stay.
 
 ### Sort and filter
 
@@ -30,7 +30,7 @@ Before it writes, the plugin checks that the line in the note is still exactly t
 
 The toolbar has a filter box, a Show menu (open tasks, done tasks or all tasks), a Sort menu and a button that reverses the sort. Sort by due date, scheduled date, priority, task text, note name or the order in the notes.
 
-The filter box matches words in the task text, tags, note name and heading. The view saves the Show and Sort choices in the base file.
+The filter box matches words in the task text, tags, note name and heading. The base file keeps the Show and Sort choices.
 
 ### Tasks emoji and Dataview fields
 
@@ -59,7 +59,7 @@ With Pro you can:
 
 - Select a due date to change it. Press Enter to save, Escape to cancel. An empty date removes the due date.
 - Select the calendar button of a row to move the task to today. This changes the due date, or the scheduled date when the task has no due date. A task with no date gets a due date of today.
-- Select rows with the boxes on the left, then select "Complete selected" or "Move selected to today".
+- Select rows with the boxes on the left, then select "Complete selected" or "Move selected to today". "Complete selected" skips done and cancelled tasks.
 - Tick a recurring task (a line with the repeat mark and a rule like "every week") to write the next occurrence on the line below. The next line repeats the task with the next date. The other dates move by the same number of days. A rule with "when done" counts from the day you tick the task.
 
 ## Install
@@ -104,15 +104,15 @@ Auto adds a done date only to lines that already have a date. Each view also has
 
 ### Does it change my notes?
 
-Only when you tick a box or use a Pro action. Then it changes that one line, and in that line only the box or one date. With Pro, a tick on a recurring task also adds one new line below it.
+Only when you tick a box or use a Pro action. Then it changes that one line, and in that line only the box and the done date, or one date. With Pro, a tick on a recurring task also adds one new line below it.
 
 ### What about recurring tasks?
 
-With Pro, when you tick a recurring task (a line with the repeat mark and a rule like "every week"), the plugin writes the next occurrence on the line below. Without Pro, the plugin ticks a recurring task like any other task.
+With Pro, a tick on a recurring task writes the next occurrence on the line below. Without Pro, the plugin ticks a recurring task like any other task.
 
 ### Why does a base with many notes take a moment?
 
-The plugin reads each note with tasks once and keeps the result until the note changes. 2,000 tasks from 100 notes take about 300 ms in our test.
+The plugin reads each note with tasks once and keeps the result until the note changes.
 
 ### Which statuses count as done?
 
