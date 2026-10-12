@@ -196,6 +196,64 @@ export function bucketField(info: Pick<TaskInfo, 'dates'>): DateField | null {
 	return null;
 }
 
+const addDays = (iso: string, n: number): string => {
+	const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+	const t = new Date(Date.UTC(y, m - 1, d + n));
+	return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
+};
+const addMonths = (iso: string, n: number): string => {
+	const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+	const t = new Date(Date.UTC(y, m - 1 + n, 1));
+	const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+	const day = Math.min(d, last);
+	return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(day)}`;
+};
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+
+/**
+ * The next date of a recurrence rule, in the style of the Tasks plugin: "every N days|weeks|months|years",
+ * "every day|week|month|year", "every monday" (and other weekday names), and "every N" for a number of days.
+ * The base date is the due date, or the scheduled date when there is no due date. Words like "when done",
+ * "starting", "every week on" plus a day list are accepted but the rule without them decides the step.
+ * Null when the rule says nothing the plugin can count, or when there is no base date.
+ */
+export function nextRecurrenceDate(rule: string, base: string | undefined): string | null {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(base ?? '')) return null;
+	const SP1 = new RegExp(`^every[ \t]+`);
+	const text = rule.toLowerCase().replace(SP1, '');
+	let n = 1;
+	let unit: 'day' | 'week' | 'month' | 'year' | null = null;
+	const COUNT_RE = new RegExp(`^(?:every[ \t]+)?(\\d{1,3})[ \t]+(days?|weeks?|months?|years?)\\b`);
+	const count = COUNT_RE.exec(rule.toLowerCase());
+	if (count) {
+		n = Number(count[1]);
+		unit = count[2]!.replace(/s$/, '') as 'day' | 'week' | 'month' | 'year';
+	} else if (new RegExp(`^(?:every[ \t]+)?\\d{1,3}$`).test(rule.trim())) {
+		// A bare count is a number of days, in the style of the Tasks plugin.
+		const SP2 = new RegExp(`^\\S+[ \t]+`);
+		n = Number(rule.trim().replace(SP2, ''));
+		unit = 'day';
+	} else {
+		const WORD_RE = new RegExp(`^(?:every[ \t]+)?(day|week|month|year)\\b`);
+		const word = WORD_RE.exec(text);
+		if (word) unit = word[1]! as 'day' | 'week' | 'month' | 'year';
+		else {
+			const wd = WEEKDAYS.findIndex((w) => text.startsWith(w) || text.startsWith(w.slice(0, 3)));
+			if (wd < 0) return null;
+			const [y, m, d] = (base as string).split('-').map(Number) as [number, number, number];
+			const t = new Date(Date.UTC(y, m - 1, d));
+			const delta = (wd - t.getUTCDay() + 7) % 7 || 7;
+			return addDays(base as string, delta);
+		}
+	}
+	const k = unit === 'day' ? n : unit === 'week' ? n * 7 : 0;
+	if (k) return addDays(base as string, k);
+	if (unit === 'month') return addMonths(base as string, n);
+	return addMonths(base as string, n * 12);
+}
+
 /** Applies one edit to one task line. Returns null when the line is not a task. The rest of the line keeps every byte. */
 export function editTaskLine(line: string, edit: TaskEdit): string | null {
 	const t = splitTaskLine(line);
@@ -229,4 +287,46 @@ export function editTaskLine(line: string, edit: TaskEdit): string | null {
 export function editAndParse(line: string, edit: TaskEdit): { line: string | null; task: TaskInfo | null } {
 	const next = editTaskLine(line, edit);
 	return { line: next, task: next === null ? null : parseTaskLine(next) };
+}
+
+/** Whole days from date a to date b (both YYYY-MM-DD). */
+const daysBetween = (a: string, b: string): number => {
+	const t = (iso: string) => {
+		const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+		return Date.UTC(y, m - 1, d);
+	};
+	return Math.round((t(b) - t(a)) / 86400000);
+};
+
+/**
+ * The next open occurrence of a recurring task, as a full line to insert after the done line, or null when the
+ * plugin cannot make one: no recurrence, no base date, or a rule the plugin cannot count. The new line keeps
+ * the head (indent, list marker) and the recurrence rule and tags of the done line. The due (or scheduled) date
+ * moves to the next date of the rule, counted from the done date ("today") when the rule says "when done".
+ * The other start, scheduled and due dates move by the same number of days, like the Tasks plugin does.
+ * The new line has no done date, no block id and no other status than open.
+ */
+export function nextOccurrenceLine(line: string, today: string, style: DateStyle): string | null {
+	const t = splitTaskLine(line);
+	if (!t) return null;
+	const info = parseTaskLine(line);
+	if (!info || !info.recurrence) return null;
+	const field: DateField = info.dates.due ? 'due' : 'scheduled';
+	const base = info.dates[field];
+	if (!base) return null;
+	const whenDone = /\bwhen[ \t]+done\b/i.test(info.recurrence) && /^\d{4}-\d{2}-\d{2}$/.test(today);
+	const next = nextRecurrenceDate(info.recurrence, whenDone ? today : base);
+	if (!next || next <= base) return null;
+	const shift = daysBetween(base, next);
+	let tail = t.tail;
+	for (const f of ['start', 'scheduled', 'due'] as const) {
+		const value = info.dates[f];
+		if (value) tail = setDateInTail(tail, f, f === field ? next : addDays(value, shift), style);
+	}
+	// Drop the done date of the source line if the user ticked it in two steps (open with a done date already).
+	tail = setDateInTail(tail, 'done', null, style);
+	// A new occurrence is a new task: it gets no task id and no block id. A CRLF line keeps its "\r".
+	const cr = tail.endsWith('\r') ? '\r' : '';
+	tail = (cr ? tail.slice(0, -1) : tail).replace(ID_RE, '$1').replace(BLOCK_ID, '') + cr;
+	return joinTaskLine({ head: t.head, status: ' ', tail });
 }

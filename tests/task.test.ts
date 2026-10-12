@@ -2,13 +2,27 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import vectors from './vectors/bases-task-rows.json';
-import { DATE_FIELDS, editAndParse, editTaskLine, joinTaskLine, parseTaskLine, setDateInTail, splitTaskLine, type TaskEdit } from '../src/task';
+import { DATE_FIELDS, editAndParse, editTaskLine, joinTaskLine, nextOccurrenceLine, nextRecurrenceDate, parseTaskLine, setDateInTail, splitTaskLine, type TaskEdit } from '../src/task';
 
 describe('golden vectors (packages/spec/vectors/bases-task-rows.json)', () => {
-	for (const c of vectors.cases) {
+	for (const c of vectors.cases.filter((c) => c.fn === 'editAndParse')) {
 		it(c.name, () => {
 			const [line, edit] = c.args as [string, TaskEdit];
 			expect(editAndParse(line, edit)).toEqual(c.expected);
+		});
+	}
+});
+
+describe('recurrence vectors (packages/spec/vectors/bases-task-rows.json)', () => {
+	const { cases } = vectors;
+	for (const c of cases.filter((c) => c.fn === 'nextRecurrenceDate')) {
+		it(c.name, () => {
+			expect(nextRecurrenceDate(...(c.args as [string, string | undefined]))).toEqual(c.expected);
+		});
+	}
+	for (const c of cases.filter((c) => c.fn === 'nextOccurrenceLine')) {
+		it(c.name, () => {
+			expect(nextOccurrenceLine(...(c.args as [string, string, 'emoji' | 'dataview']))).toEqual(c.expected);
 		});
 	}
 });
@@ -108,5 +122,23 @@ describe('edge cases', () => {
 
 	it('an existing done date is not doubled on tick', () => {
 		expect(editTaskLine('- [ ] a ✅ 2026-10-01 📅 2026-10-02', { type: 'done', today: '2026-10-10' })).toBe('- [x] a ✅ 2026-10-01 📅 2026-10-02');
+	});
+});
+
+describe('nextOccurrenceLine dates', () => {
+	it('moves the scheduled and start dates by the same number of days as the due date', () => {
+		expect(nextOccurrenceLine('- [ ] Review 🔁 every week 🛫 2026-10-08 ⏳ 2026-10-11 📅 2026-10-12', '2026-10-12', 'emoji')).toBe(
+			'- [ ] Review 🔁 every week 🛫 2026-10-15 ⏳ 2026-10-18 📅 2026-10-19',
+		);
+	});
+
+	it('counts a "when done" rule from the done date', () => {
+		expect(nextOccurrenceLine('- [ ] Cut hair 🔁 every 3 weeks when done 📅 2026-09-01', '2026-10-12', 'emoji')).toBe(
+			'- [ ] Cut hair 🔁 every 3 weeks when done 📅 2026-11-02',
+		);
+	});
+
+	it('drops a block id on a CRLF line and keeps the carriage return', () => {
+		expect(nextOccurrenceLine('- [ ] Pay rent 🔁 every month 📅 2026-10-01 ^rent\r', '2026-10-10', 'emoji')).toBe('- [ ] Pay rent 🔁 every month 📅 2026-11-01\r');
 	});
 });

@@ -1,10 +1,10 @@
 # Bases Task Rows
 
-Bases Task Rows adds a "Task rows" view to Bases. It shows each checklist task in the notes that a base selects as its own row. A row has the done box, the task text, the due and scheduled dates, the priority, the tags, the source note and the heading above the task. Tick a box in the view and the plugin writes the change to that line of the note.
+Bases Task Rows adds a "Task rows" view to Bases. It shows each checklist task in the notes that a base selects as its own row. A row has the done box, the task text, the due and scheduled dates, the priority, the tags, the source note and the heading above the task. Tick a box in the view and the plugin writes the change to that line.
 
 Core Bases reads note properties, not the lines inside a note. It understands the date format of the Tasks plugin (`📅 2026-10-12`) and Dataview fields (`[due:: 2026-10-12]`), so it works with the notes you already have.
 
-The view, the done box, sorting, filtering and up to 200 tasks per view are free. Pro adds every task past 200, groups, due date editing in the row, and bulk actions. Pro costs $5 a month, or $15 once, through GitHub Sponsors. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply.
+The view, the done box, sorting, filtering and up to 200 tasks per view are free. Pro adds every task past 200, groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
 
 ## Features
 
@@ -12,7 +12,7 @@ The view, the done box, sorting, filtering and up to 200 tasks per view are free
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/task-rows.png" alt="A base with 150 tasks from 30 notes, one row per task, with due date, scheduled date, priority, tags, note and heading" width="720">
 
-The base decides which notes count, with its normal filters, for example "in the folder Projects" or "has the tag #client". The view then lists every `- [ ]` and `- [x]` line in those notes. A task-like line inside a code block does not count, because the app does not treat it as a task.
+The base decides which notes count, with its normal filters, for example "in the folder Projects" or "has the tag #client". The view then lists every `- [ ]` and `- [x]` line in those notes. A task-like line inside a code block does not count.
 
 Select the task text or the note name to open the note at that line.
 
@@ -22,15 +22,15 @@ Select the task text or the note name to open the note at that line.
 
 Tick the box and the plugin changes `[ ]` to `[x]` in the source line. If the line already has a date, it also adds a done date (`✅ 2026-10-10`, or `[completion:: 2026-10-10]` on a Dataview line), the same way the Tasks plugin does. Untick and it goes away.
 
-Before it writes, the plugin checks that the line in the note is still exactly the line it read. If that line changed in the meantime, nothing is written. A notice tells you, and the view reads the note again. All other lines of the note keep every character, including Windows line ends.
+Before it writes, the plugin checks that the line in the note is still exactly the line it read. If that line changed in the meantime, nothing is written. A notice tells you, and the view reads the note again. Other lines of the note keep every character, including Windows line ends.
 
 ### Sort and filter
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/filter.png" alt="The filter box with the word budget, which leaves only the matching tasks" width="720">
 
-The toolbar has a filter box, a Show menu (open tasks, done tasks or all tasks), a Sort menu and a button that reverses the sort. Sort by due date, scheduled date, priority, task text, note name or the order in the notes. Tasks without a date always come last.
+The toolbar has a filter box, a Show menu (open tasks, done tasks or all tasks), a Sort menu and a button that reverses the sort. Sort by due date, scheduled date, priority, task text, note name or the order in the notes.
 
-The filter box matches words in the task text, tags, note name and heading. The view saves the Show and Sort choices in the base file, one set for each view.
+The filter box matches words in the task text, tags, note name and heading. The view saves the Show and Sort choices in the base file.
 
 ### Tasks emoji and Dataview fields
 
@@ -49,7 +49,7 @@ The Task column shows the text without these parts. A new date uses the format t
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/date-groups.png" alt="Open tasks grouped under Overdue, Today, Next 7 days, Later and No date" width="720">
 
-Group by date puts each open task under Overdue, Today, Next 7 days, Later or No date, by its due date, or by its scheduled date when there is no due date. Done tasks go under Done. You can also group by note, by heading, or by tag. A task with two tags shows under both tags.
+Group by date puts each open task under Overdue, Today, Next 7 days, Later or No date, by its due date, or by its scheduled date when there is no due date. Done tasks go under Done. You can also group by note, heading, or tag. A task with two tags shows under both tags.
 
 ### Edit due dates, move to today, complete many (Pro)
 
@@ -60,12 +60,11 @@ With Pro you can:
 - Select a due date to change it. Press Enter to save, Escape to cancel. An empty date removes the due date.
 - Select the calendar button of a row to move the task to today. This changes the due date, or the scheduled date when the task has no due date. A task with no date gets a due date of today.
 - Select rows with the boxes on the left, then select "Complete selected" or "Move selected to today".
+- Tick a recurring task (a line with the repeat mark and a rule like "every week") to write the next occurrence on the line below. The next line repeats the task with the next date. The other dates move by the same number of days. A rule with "when done" counts from the day you tick the task.
 
 ## Install
 
 When Bases Task Rows is listed in the community directory, open Settings, then Community plugins, then Browse, and search for "Bases Task Rows". Select Install, then Enable.
-
-To install by hand, download `main.js`, `manifest.json` and `styles.css` from the latest release. Put the three files in `<vault>/.obsidian/plugins/bases-task-rows/`. Reload the list of community plugins, then turn on Bases Task Rows.
 
 The plugin needs Obsidian 1.13.4 or newer with the Bases core plugin on. It was tested on desktop with Obsidian 1.13.4 and 1.14.4.
 
@@ -105,15 +104,15 @@ Auto adds a done date only to lines that already have a date. Each view also has
 
 ### Does it change my notes?
 
-Only when you tick a box or use a Pro action. Then it changes that one line, and in that line only the box or one date. Nothing else in the note changes.
+Only when you tick a box or use a Pro action. Then it changes that one line, and in that line only the box or one date. With Pro, a tick on a recurring task also adds one new line below it.
 
 ### What about recurring tasks?
 
-The plugin ticks a recurring task like any other task. It does not create the next one. If you use the Tasks plugin for repeats, tick those tasks in the note or in a Tasks query.
+With Pro, when you tick a recurring task (a line with the repeat mark and a rule like "every week"), the plugin writes the next occurrence on the line below. Without Pro, the plugin ticks a recurring task like any other task.
 
 ### Why does a base with many notes take a moment?
 
-The plugin reads each note with tasks once and keeps the result until the note changes. In our test, 2,000 tasks from 100 notes take less than 300 ms.
+The plugin reads each note with tasks once and keeps the result until the note changes. 2,000 tasks from 100 notes take about 300 ms in our test.
 
 ### Which statuses count as done?
 
@@ -133,7 +132,7 @@ After a successful check, Pro can work offline for up to 14 days. Sign out or a 
 
 ## Support
 
-Report bugs and feature requests in this repository's issue tracker. Please include your Obsidian version and a sample task line that shows the problem.
+Report bugs and feature requests in this repository's issue tracker. Include your Obsidian version and a sample task line that shows the problem.
 
 To build from source:
 
@@ -143,7 +142,7 @@ npm run build
 npm test
 ```
 
-The tests check golden cases for reading and changing task lines in both formats. An end-to-end test ticks rows in a real Obsidian and compares the notes byte for byte.
+The tests check golden cases for reading and changing task lines in both formats.
 
 ## License
 

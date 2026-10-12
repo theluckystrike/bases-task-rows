@@ -28,7 +28,8 @@
      ],
      "recurrence": "every week"
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "tick adds a done date to a line that has a due date (auto)",
@@ -55,7 +56,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "tick with done date never only flips the status character",
@@ -82,7 +84,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "tick a plain task in auto mode adds nothing",
@@ -104,7 +107,8 @@
      "tags": [],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "untick removes the done date",
@@ -127,7 +131,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "Dataview due field changes only the date",
@@ -154,7 +159,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "Dataview line gets a Dataview completion field on tick",
@@ -181,7 +187,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "round parentheses Dataview field is read and removed",
@@ -204,7 +211,8 @@
      "tags": [],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "CRLF line keeps its carriage return after a new due date",
@@ -229,7 +237,8 @@
      "tags": [],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "new due date goes before the block id",
@@ -257,7 +266,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "new due date on a plain line uses the Dataview style when asked",
@@ -283,7 +293,8 @@
      "tags": [],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "move to today changes the scheduled date when there is no due date",
@@ -307,7 +318,8 @@
      "tags": [],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "move to today adds a due date to an undated task",
@@ -333,7 +345,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "tags skip pure numbers and code spans",
@@ -356,7 +369,8 @@
      ],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "cancelled status counts as closed",
@@ -379,7 +393,8 @@
      "tags": [],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "a list item without a checkbox is not a task",
@@ -393,7 +408,8 @@
    "expected": {
     "line": null,
     "task": null
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "an empty checkbox pair is not a task",
@@ -406,7 +422,8 @@
    "expected": {
     "line": null,
     "task": null
-   }
+   },
+   "fn": "editAndParse"
   },
   {
    "name": "alternate due emoji 📆 is read and kept",
@@ -431,7 +448,139 @@
      "tags": [],
      "recurrence": null
     }
-   }
+   },
+   "fn": "editAndParse"
+  },
+  {
+   "name": "next date for every 7 days adds seven days to the due date",
+   "args": [
+    "every 7 days",
+    "2026-10-12"
+   ],
+   "expected": "2026-10-19",
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date for every 2 weeks adds fourteen days",
+   "args": [
+    "every 2 weeks",
+    "2026-10-12"
+   ],
+   "expected": "2026-10-26",
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date for every month keeps the day and clamps to the last day",
+   "args": [
+    "every month",
+    "2026-01-31"
+   ],
+   "expected": "2026-02-28",
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date for every 3 months adds three months",
+   "args": [
+    "every 3 months",
+    "2026-10-12"
+   ],
+   "expected": "2027-01-12",
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date for every year adds one year",
+   "args": [
+    "every year",
+    "2026-02-29"
+   ],
+   "expected": "2027-02-28",
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date for a weekday name moves to the next monday",
+   "args": [
+    "every monday",
+    "2026-10-12"
+   ],
+   "expected": "2026-10-19",
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date for every 3 days adds three days",
+   "args": [
+    "every 3",
+    "2026-10-12"
+   ],
+   "expected": "2026-10-15",
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date for a rule the plugin cannot count returns null",
+   "args": [
+    "every other friday",
+    "2026-10-12"
+   ],
+   "expected": null,
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next date with no base date returns null",
+   "args": [
+    "every day",
+    null
+   ],
+   "expected": null,
+   "fn": "nextRecurrenceDate"
+  },
+  {
+   "name": "next occurrence line writes an open task with the next due date and no ids",
+   "args": [
+    "- [x] Water plants 🔁 every week ⏳ 2026-10-11 📅 2026-10-12 ✅ 2026-10-12 #home ^water-1",
+    "2026-10-12",
+    "emoji"
+   ],
+   "expected": "- [ ] Water plants 🔁 every week ⏳ 2026-10-18 📅 2026-10-19 #home",
+   "fn": "nextOccurrenceLine"
+  },
+  {
+   "name": "next occurrence line uses the scheduled date when there is no due date",
+   "args": [
+    "  - [ ] Pay rent 🔁 every month [scheduled:: 2026-10-01]",
+    "2026-10-12",
+    "emoji"
+   ],
+   "expected": "  - [ ] Pay rent 🔁 every month [scheduled:: 2026-11-01]",
+   "fn": "nextOccurrenceLine"
+  },
+  {
+   "name": "next occurrence line keeps the dataview style of the source line",
+   "args": [
+    "- [ ] Submit report 🔁 every 2 weeks [due:: 2026-10-12]",
+    "2026-10-12",
+    "dataview"
+   ],
+   "expected": "- [ ] Submit report 🔁 every 2 weeks [due:: 2026-10-26]",
+   "fn": "nextOccurrenceLine"
+  },
+  {
+   "name": "next occurrence line is null for a task without a rule",
+   "args": [
+    "- [ ] Plain task 📅 2026-10-12",
+    "2026-10-12",
+    "emoji"
+   ],
+   "expected": null,
+   "fn": "nextOccurrenceLine"
+  },
+  {
+   "name": "next occurrence line rolls a task with a future date when it is ticked early",
+   "args": [
+    "- [ ] Water plants 🔁 every week 📅 2026-10-20",
+    "2026-10-12",
+    "emoji"
+   ],
+   "expected": "- [ ] Water plants 🔁 every week 📅 2026-10-27",
+   "fn": "nextOccurrenceLine"
   }
  ]
 }

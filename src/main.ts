@@ -3,7 +3,7 @@ import type { SponsorsManager } from './license/index';
 import { createGitHubSponsors } from './license/github-obsidian';
 import { SPONSORS, onProChange, setProSource } from './pro';
 import { DEFAULT_SETTINGS, BasesTaskRowsSettingTab, normalizeSettings, type BasesTaskRowsSettings } from './settings';
-import { editTaskLine, type TaskEdit } from './task';
+import { editTaskLine, nextOccurrenceLine, type TaskEdit } from './task';
 import { TaskRowsView, VIEW_TYPE, viewOptions } from './view';
 import { applyLineEdits, type LineEdit } from './write';
 import type { TaskRow } from './rows';
@@ -115,12 +115,22 @@ export default class BasesTaskRowsPlugin extends Plugin {
 		const byPath = new Map<string, LineEdit[]>();
 		const style = { style: this.settings.dateStyle };
 		const full: TaskEdit = edit.type === 'done' || edit.type === 'open' ? { ...edit, doneDate: this.settings.doneDate, ...style } : { ...edit, ...style };
+		// After a done tick of a recurring task, the next occurrence goes on the line below (Pro).
+		const inserts = new Map<string, { after: number; text: string }[]>();
 		for (const row of rows) {
 			const next = editTaskLine(row.raw, full);
 			if (next === null || next === row.raw) continue;
 			const list = byPath.get(row.path) ?? [];
 			list.push({ line: row.line, expected: row.raw, next });
 			byPath.set(row.path, list);
+			if (edit.type === 'done' && this.isPro()) {
+				const occurrence = nextOccurrenceLine(row.raw, full.type === 'done' ? full.today : '', style.style ?? 'emoji');
+				if (occurrence) {
+					const ilist = inserts.get(row.path) ?? [];
+					ilist.push({ after: row.line, text: occurrence });
+					inserts.set(row.path, ilist);
+				}
+			}
 		}
 		let written = 0;
 		let conflicts = 0;
@@ -130,11 +140,24 @@ export default class BasesTaskRowsPlugin extends Plugin {
 				conflicts += edits.length;
 				continue;
 			}
+			const ins = inserts.get(path);
 			await this.app.vault.process(file, (content) => {
 				const r = applyLineEdits(content, edits);
+				let out = r.content;
+				if (r.applied.length && ins?.length) {
+					// Insert after the done lines, from the bottom up, so line numbers stay valid.
+					const lines = out.split('\n');
+					for (const i of [...ins].sort((a, b) => b.after - a.after)) {
+						if (r.applied.includes(i.after)) {
+							lines.splice(i.after + 1, 0, i.text);
+							written++;
+						}
+					}
+					out = lines.join('\n');
+				}
 				written += r.applied.length;
 				conflicts += r.conflicts.length;
-				return r.content;
+				return out;
 			});
 		}
 		if (conflicts) new Notice(`${conflicts} ${conflicts === 1 ? 'task' : 'tasks'} changed in the note since the view read ${conflicts === 1 ? 'it' : 'them'}, so nothing was written for ${conflicts === 1 ? 'it' : 'them'}. The rows are read again.`);

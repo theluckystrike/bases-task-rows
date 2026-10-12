@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.1.0
+
+### Minor Changes
+
+- c1af3f3: Tick a recurring task to write the next occurrence on the line below (Pro)
+
 ## 1.0.3
 
 ### Patch Changes

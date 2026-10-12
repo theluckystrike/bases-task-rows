@@ -57,6 +57,34 @@ describe('BasesTaskRowsPlugin', () => {
 		expect(await app.vault.read(app.vault.getFileByPath('Plan.md')!)).toBe('# Plan\n- [ ] Pay rent 📅 2026-10-12 #home\n- [ ] Call Ana [due:: 2026-10-10]\n');
 	});
 
+	it('writes the next occurrence of a recurring task below the done line with Pro, also for a future date', async () => {
+		const note = '# Plan\n- [ ] Water plants 🔁 every week 📅 2026-10-20\n- [ ] Call Ana 🔁 every day 📅 2026-10-09\n';
+		const { app, plugin } = await makePlugin({ 'Plan.md': note });
+		plugin.isPro = () => true;
+		const out = await plugin.editRows(rowsOf(note), { type: 'done', today: '2026-10-10' });
+		expect(out).toEqual({ written: 4, conflicts: 0 });
+		expect(await app.vault.read(app.vault.getFileByPath('Plan.md')!)).toBe(
+			'# Plan\n- [x] Water plants 🔁 every week 📅 2026-10-20 ✅ 2026-10-10\n- [ ] Water plants 🔁 every week 📅 2026-10-27\n- [x] Call Ana 🔁 every day 📅 2026-10-09 ✅ 2026-10-10\n- [ ] Call Ana 🔁 every day 📅 2026-10-10\n',
+		);
+	});
+
+	it('keeps CRLF and drops the block id on the next occurrence', async () => {
+		const note = '# Plan\r\n- [ ] Pay rent 🔁 every month 📅 2026-10-01 ^rent\r\n- [ ] Call Ana\r\n';
+		const { app, plugin } = await makePlugin({ 'Plan.md': note });
+		plugin.isPro = () => true;
+		await plugin.editRows(rowsOf(note).slice(0, 1), { type: 'done', today: '2026-10-10' });
+		expect(await app.vault.read(app.vault.getFileByPath('Plan.md')!)).toBe(
+			'# Plan\r\n- [x] Pay rent 🔁 every month 📅 2026-10-01 ✅ 2026-10-10 ^rent\r\n- [ ] Pay rent 🔁 every month 📅 2026-11-01\r\n- [ ] Call Ana\r\n',
+		);
+	});
+
+	it('does not write a next occurrence without Pro', async () => {
+		const note = '# Plan\n- [ ] Water plants 🔁 every week 📅 2026-10-09\n- [ ] Call Ana\n';
+		const { app, plugin } = await makePlugin({ 'Plan.md': note });
+		await plugin.editRows(rowsOf(note).slice(0, 1), { type: 'done', today: '2026-10-10' });
+		expect(await app.vault.read(app.vault.getFileByPath('Plan.md')!)).toBe('# Plan\n- [x] Water plants 🔁 every week 📅 2026-10-09 ✅ 2026-10-10\n- [ ] Call Ana\n');
+	});
+
 	it('writes a base file text with a folder filter and the task view', () => {
 		expect(taskBaseText('Projects')).toBe('filters:\n  and:\n    - file.inFolder("Projects")\nviews:\n  - type: task-rows\n    name: Tasks\n    status: open\n    sort: due\n');
 		expect(taskBaseText('/')).not.toContain('filters');

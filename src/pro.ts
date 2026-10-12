@@ -15,7 +15,7 @@ export const SPONSORS: SponsorsConfig = {
 };
 
 export const PRO_UI = {
-	proSummary: 'Pro shows every task past 200, groups rows by note, heading, tag or date, edits due dates in the row, and completes or moves many tasks to today at once.',
+	proSummary: 'Pro shows every task past 200, groups rows by note, heading, tag or date, edits due dates in the row, completes or moves many tasks to today at once, and writes the next occurrence of a recurring task.',
 	priceText: 'Sponsor $5 a month, or $15 once. When you have paid $15 in total, Pro stays on.',
 };
 
