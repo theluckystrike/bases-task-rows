@@ -1,6 +1,6 @@
 {
 	"name": "bases-task-rows",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"private": true,
 	"description": "Shows each checklist task in the notes a base selects as its own row, with due dates, tags and the source note, and ticks tasks from the view.",
 	"main": "main.js",
