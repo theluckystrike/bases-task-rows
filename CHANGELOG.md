@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.2.0
+
+### Minor Changes
+
+- 880d827: Read ISO date links in Tasks and Dataview fields. Reject invalid calendar dates. Keep metadata inside code spans as text.
+
 ## 1.1.2
 
 ### Patch Changes

@@ -491,9 +491,9 @@
    "name": "next date for every year adds one year",
    "args": [
     "every year",
-    "2026-02-29"
+    "2024-02-29"
    ],
-   "expected": "2027-02-28",
+   "expected": "2025-02-28",
    "fn": "nextRecurrenceDate"
   },
   {
@@ -581,6 +581,34 @@
    ],
    "expected": "- [ ] Water plants 🔁 every week 📅 2026-10-27",
    "fn": "nextOccurrenceLine"
+  },
+  {
+   "name": "edit linked due date keeps the link and CRLF",
+   "fn": "editAndParse",
+   "args": [
+    "- [ ] Review 📅 [[2026-10-18]] #work\r",
+    {
+     "type": "date",
+     "field": "due",
+     "value": "2026-10-19"
+    }
+   ],
+   "expected": {
+    "line": "- [ ] Review 📅 [[2026-10-19]] #work\r",
+    "task": {
+     "status": " ",
+     "done": false,
+     "text": "Review",
+     "dates": {
+      "due": "2026-10-19"
+     },
+     "priority": 2,
+     "tags": [
+      "work"
+     ],
+     "recurrence": null
+    }
+   }
   }
  ]
 }

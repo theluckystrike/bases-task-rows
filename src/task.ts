@@ -35,7 +35,7 @@ const PRIORITY_WORD: Record<string, number> = { highest: 5, high: 4, medium: 3, 
 export const PRIORITY_LABEL: Record<number, string> = { 5: 'Highest', 4: 'High', 3: 'Medium', 2: '', 1: 'Low', 0: 'Lowest' };
 
 const LINE = /^((?:[ \t]*>)*[ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+\[)([^\]\r\n])\]([^\n]*)$/;
-const DATE = String.raw`(\d{4}-\d{2}-\d{2})`;
+const DATE = String.raw`(\[\[\d{4}-\d{2}-\d{2}\]\]|\d{4}-\d{2}-\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?(?![\p{L}\p{N}_-])`;
 const VS = '\\uFE0F?';
 const EMOJI: Record<DateField, string> = {
 	due: '(?:📅|📆|🗓)',
@@ -58,7 +58,7 @@ const DV_KEYS: Record<DateField, string[]> = {
 };
 
 const emojiDate = (f: DateField) => new RegExp(`(^|[ \\t])${EMOJI[f]}${VS}[ \\t]*${DATE}`, 'u');
-const dvDate = (f: DateField) => new RegExp(`(^|[ \\t])([[(])[ \\t]*(?:${DV_KEYS[f].join('|')})[ \\t]*::[ \\t]*${DATE}[^\\])\\r\\n]*[\\])]`, 'iu');
+const dvDate = (f: DateField) => new RegExp(`(^|[ \\t])([[(])[ \\t]*(?:${DV_KEYS[f].join('|')})[ \\t]*::[ \\t]*${DATE}[ \\t]*[\\])]`, 'iu');
 const EMOJI_RE = Object.fromEntries(DATE_FIELDS.map((f) => [f, emojiDate(f)])) as Record<DateField, RegExp>;
 const DV_RE = Object.fromEntries(DATE_FIELDS.map((f) => [f, dvDate(f)])) as Record<DateField, RegExp>;
 const ANY_EMOJI_DATE = /(?:📅|📆|🗓|⏳|⌛|🛫|✅|➕|❌)️?[ \t]*\d{4}-\d{2}-\d{2}/u;
@@ -70,7 +70,53 @@ const RECUR_RE = new RegExp(`(^|[ \\t])🔁${VS}[ \\t]*([^${SIGNS}[(^]*?)(?=[ \\
 const ID_RE = new RegExp(`(^|[ \\t])(?:🆔|⛔|🏁)${VS}[ \\t]*[^ \\t${SIGNS}]+`, 'gu');
 const TAG_RE = /(^|[ \t])#([^\s#,.;:!?()[\]{}"'`|\\^=<>]+)/gu;
 const BLOCK_ID = /([ \t]+\^[A-Za-z0-9-]+)[ \t]*$/;
-const CODE_SPAN = /`[^`]*`/g;
+
+/** Code spans use a matching run of backticks. Keep offsets for edits to the original line. */
+function codeRanges(text: string): Array<[number, number]> {
+	const ranges: Array<[number, number]> = [];
+	let i = 0;
+	while (i < text.length) {
+		const start = text.indexOf('`', i);
+		if (start < 0) break;
+		let end = start;
+		while (text[end] === '`') end++;
+		const length = end - start;
+		let next = end;
+		let closed = false;
+		while ((next = text.indexOf('`', next)) >= 0) {
+			let stop = next;
+			while (text[stop] === '`') stop++;
+			if (stop - next === length) {
+				ranges.push([start, stop]);
+				i = stop;
+				closed = true;
+				break;
+			}
+			next = stop;
+		}
+		if (!closed) i = end;
+	}
+	return ranges;
+}
+
+function withoutCode(text: string): string {
+	let out = '';
+	let start = 0;
+	for (const [from, to] of codeRanges(text)) {
+		out += text.slice(start, from) + ' '.repeat(to - from);
+		start = to;
+	}
+	return out + text.slice(start);
+}
+
+/** Accept only dates on the Gregorian calendar. Date.UTC treats years 0 to 99 specially. */
+export function isValidDate(value: string): boolean {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+	const [year, month, day] = value.split('-').map(Number) as [number, number, number];
+	const date = new Date(0);
+	date.setUTCFullYear(year, month - 1, day);
+	return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
 
 /** Splits a checklist line. Null when the line is not a task. A trailing "\r" stays in tail. */
 export function splitTaskLine(line: string): TaskLine | null {
@@ -89,10 +135,19 @@ export function isDoneStatus(status: string): boolean {
 }
 
 function findDate(body: string, f: DateField): { value: string; style: DateStyle } | null {
-	const e = EMOJI_RE[f].exec(body);
-	if (e) return { value: e[2]!, style: 'emoji' };
-	const d = DV_RE[f].exec(body);
-	if (d) return { value: d[3]!, style: 'dataview' };
+	const match = findDateMatch(body, f);
+	return match ? { value: match.value, style: match.style } : null;
+}
+
+function findDateMatch(body: string, f: DateField): { hit: RegExpExecArray; value: string; style: DateStyle } | null {
+	const text = withoutCode(body);
+	for (const [pattern, style, group] of [[EMOJI_RE[f], 'emoji', 2], [DV_RE[f], 'dataview', 3]] as const) {
+		for (const hit of text.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))) {
+			const value = hit[group]!.replace(/^\[\[|\]\]$/g, '');
+			if (style === 'dataview' && ((hit[2] === '[') !== hit[0].endsWith(']'))) continue;
+			if (isValidDate(value)) return { hit, value, style };
+		}
+	}
 	return null;
 }
 
@@ -109,7 +164,7 @@ function findPriority(body: string): number {
 /** Tags in the body, without the "#", in order, no repeats. Pure numbers are not tags (same rule as the app). */
 export function findTags(body: string): string[] {
 	const out: string[] = [];
-	for (const m of body.replace(CODE_SPAN, ' ').matchAll(TAG_RE)) {
+	for (const m of withoutCode(body).matchAll(TAG_RE)) {
 		const tag = m[2]!.replace(/\/+$/, '');
 		if (!tag || /^\d+$/.test(tag) || out.includes(tag)) continue;
 		out.push(tag);
@@ -119,8 +174,22 @@ export function findTags(body: string): string[] {
 
 /** Task text for display: the body without dates, priority, fields, recurrence, ids, tags and block id. */
 function displayText(body: string): string {
+	const ranges = codeRanges(body);
+	if (ranges.length) {
+		let start = 0;
+		let out = '';
+		for (const [from, to] of ranges) {
+			out += `${displayText(body.slice(start, from))} ${body.slice(from, to)} `;
+			start = to;
+		}
+		return (out + displayText(body.slice(start))).trim();
+	}
 	let s = body.replace(/\r$/, '').replace(BLOCK_ID, '');
-	for (const f of DATE_FIELDS) s = s.replace(new RegExp(EMOJI_RE[f].source, 'gu'), '$1');
+	for (const f of DATE_FIELDS) {
+		for (let date = findDateMatch(s, f); date; date = findDateMatch(s, f)) {
+			s = s.slice(0, date.hit.index) + date.hit[1]! + s.slice(date.hit.index + date.hit[0].length);
+		}
+	}
 	s = s.replace(DV_FIELD_ALL, '$1').replace(new RegExp(PRIORITY_RE.source, 'gu'), '$1').replace(ID_RE, '$1').replace(RECUR_RE, '$1');
 	s = s.replace(TAG_RE, (all: string, pre: string, tag: string) => (/^\d+$/.test(tag) ? all : pre));
 	return s.replace(/[ \t]+/g, ' ').trim();
@@ -130,7 +199,7 @@ function displayText(body: string): string {
 export function parseTaskLine(line: string): TaskInfo | null {
 	const t = splitTaskLine(line);
 	if (!t) return null;
-	const body = t.tail;
+	const body = withoutCode(t.tail);
 	const dates: Partial<Record<DateField, string>> = {};
 	for (const f of DATE_FIELDS) {
 		const d = findDate(body, f);
@@ -140,7 +209,7 @@ export function parseTaskLine(line: string): TaskInfo | null {
 	return {
 		status: t.status,
 		done: isDoneStatus(t.status),
-		text: displayText(body),
+		text: displayText(t.tail),
 		dates,
 		priority: findPriority(body),
 		tags: findTags(body),
@@ -150,6 +219,8 @@ export function parseTaskLine(line: string): TaskInfo | null {
 
 /** The style a new date on this line gets: the line's own style first, then the setting. */
 export function styleFor(tail: string, fallback: DateStyle): DateStyle {
+	tail = withoutCode(tail);
+	if (DATE_FIELDS.some((f) => findDateMatch(tail, f)?.style === 'emoji')) return 'emoji';
 	if (ANY_EMOJI_DATE.test(tail)) return 'emoji';
 	if (ANY_DV_FIELD.test(tail)) return 'dataview';
 	return fallback;
@@ -157,16 +228,15 @@ export function styleFor(tail: string, fallback: DateStyle): DateStyle {
 
 /** Sets, changes or removes one date in the text after "]". Only that token changes. */
 export function setDateInTail(tail: string, f: DateField, value: string | null, fallback: DateStyle): string {
-	if (value !== null && !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`not a YYYY-MM-DD date: ${value}`);
-	const e = EMOJI_RE[f].exec(tail);
-	const d = e ? null : DV_RE[f].exec(tail);
-	const hit = e ?? d;
-	if (hit) {
+	if (value !== null && !isValidDate(value)) throw new Error(`not a valid YYYY-MM-DD date: ${value}`);
+	const date = findDateMatch(tail, f);
+	if (date) {
+		const { hit } = date;
 		const start = hit.index + hit[1]!.length;
 		const end = hit.index + hit[0].length;
 		if (value === null) return tail.slice(0, hit.index) + tail.slice(end);
 		const token = tail.slice(start, end);
-		const old = e ? e[2]! : d![3]!;
+		const old = date.value;
 		const at = token.indexOf(old);
 		return tail.slice(0, start) + token.slice(0, at) + value + token.slice(at + old.length) + tail.slice(end);
 	}
@@ -220,7 +290,7 @@ const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'frida
  * Null when the rule says nothing the plugin can count, or when there is no base date.
  */
 export function nextRecurrenceDate(rule: string, base: string | undefined): string | null {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(base ?? '')) return null;
+	if (!isValidDate(base ?? '')) return null;
 	const SP1 = new RegExp(`^every[ \t]+`);
 	const text = rule.toLowerCase().replace(SP1, '');
 	let n = 1;
@@ -263,7 +333,7 @@ export function editTaskLine(line: string, edit: TaskEdit): string | null {
 			return joinTaskLine(t);
 		case 'done': {
 			const mode = edit.doneDate ?? 'auto';
-			const hadDate = ANY_EMOJI_DATE.test(t.tail) || DV_RE.due.test(t.tail) || DV_RE.scheduled.test(t.tail);
+			const hadDate = DATE_FIELDS.some((f) => findDate(t.tail, f));
 			const add = mode === 'always' || (mode === 'auto' && hadDate);
 			const tail = add && !findDate(t.tail, 'done') ? setDateInTail(t.tail, 'done', edit.today, edit.style ?? 'emoji') : t.tail;
 			return joinTaskLine({ head: t.head, status: 'x', tail });

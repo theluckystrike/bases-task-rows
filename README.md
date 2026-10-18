@@ -2,8 +2,6 @@
 
 Bases Task Rows adds a "Task rows" view to Bases. It shows each checklist task in the notes that a base selects as its own row. A row has the done box, the task text, the due and scheduled dates, the priority, the tags, the source note and the heading above the task. Tick a box in the view and the plugin writes the change to that line.
 
-Core Bases reads note properties, not the lines inside a note. It understands the date format of the Tasks plugin (`📅 2026-10-12`) and Dataview fields (`[due:: 2026-10-12]`), so it works with the notes you already have.
-
 The view, the done box, sorting, filtering and up to 200 tasks per view are free. Pro removes the limit of 200 tasks and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
 
 ## Features
@@ -42,6 +40,8 @@ The plugin reads these parts of a task line:
 - The same dates as Dataview fields in square or round brackets: `due`, `scheduled`, `start`, `completion`, `created`, `cancelled`.
 - Priority: `🔺 ⏫ 🔼 🔽 ⏬`, or `[priority:: high]`.
 - Tags, but not `#123` and not tags in code.
+
+Dates can also use ISO date links, such as `📅 [[2026-10-18]]` or `[due:: [[2026-10-18]]]`. A date edit keeps the link brackets. Calendar dates must be valid. An invalid date or a slash date such as `18/10/2026` does not set a date column. Date text inside a code span stays in the Task column.
 
 The Task column shows the text without these parts. A new date uses the format the line already has. For a line without dates, the setting "Format of new dates" decides.
 
@@ -109,10 +109,6 @@ Only when you tick a box or use a Pro action. Then it changes that one line, and
 ### What about recurring tasks?
 
 With Pro, a tick on a recurring task writes the next occurrence on the line below. Without Pro, the plugin ticks a recurring task like any other task.
-
-### Why does a base with many notes take a moment?
-
-The plugin reads each note with tasks once and keeps the result until the note changes.
 
 ### Which statuses count as done?
 
