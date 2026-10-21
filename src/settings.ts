@@ -4,6 +4,7 @@ import { PRO_UI } from './pro';
 import { FREE_LIMIT } from './rows';
 import type { DateStyle, DoneDateMode } from './task';
 import type BasesTaskRowsPlugin from './main';
+import { helloSettingItems } from './hello/settings';
 
 export interface BasesTaskRowsSettings {
 	/** Style of a new date on a line that has no date yet. */
@@ -35,6 +36,11 @@ export class BasesTaskRowsSettingTab extends PluginSettingTab {
 	}
 
 	getSettingDefinitions(): SettingDefinitionItem[] {
+		// The product rows, then the "More from NoteMods" card (packages/hello).
+		return [...this.productSettingDefinitions(), ...helloSettingItems()];
+	}
+
+	productSettingDefinitions(): SettingDefinitionItem[] {
 		return [
 			...(this.plugin.pro ? sponsorsSettingItems(this.plugin.pro, PRO_UI) : []),
 			{
