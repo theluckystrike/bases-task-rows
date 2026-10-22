@@ -127,6 +127,54 @@
 	padding: var(--size-4-4) 0;
 }
 
+/* Task progress view: one row per note. */
+.btp-table .btp-num {
+	text-align: end;
+	width: 1px;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+.btp-table .btp-row {
+	cursor: pointer;
+}
+
+.btp-table .btp-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.btp-table .btp-col-note {
+	min-width: 12em;
+}
+
+.btp-table .btp-col-progress {
+	min-width: 10em;
+	white-space: nowrap;
+}
+
+.btp-table .btp-bar {
+	width: 7em;
+	height: 0.6em;
+	margin-inline-end: var(--size-4-2);
+	vertical-align: middle;
+	accent-color: var(--interactive-accent);
+}
+
+.btp-table .btp-pct,
+.btp-table .btp-col-due {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+.btp-table .btr-overdue {
+	color: var(--text-error);
+}
+
+.btp-table .btr-today {
+	color: var(--text-accent);
+	font-weight: var(--font-semibold);
+}
+
 /* NoteMods What's new tab and settings card */
 .notemods-hello {
 	overflow-y: auto;

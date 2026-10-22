@@ -7,6 +7,13 @@
 		"wait": 900
 	},
 	{
+		"feature": "task-progress",
+		"caption": "The Task progress view: one row per project note with open, done and total tasks, a progress bar, the next due date and the overdue count.",
+		"note": "Project progress.base",
+		"eval": "(async () => { const kept = app.workspace.getMostRecentLeaf(); for (const leaf of [...app.workspace.getLeavesOfType('markdown'), ...app.workspace.getLeavesOfType('bases')]) if (leaf !== kept) leaf.detach(); app.workspace.setActiveLeaf(kept, { focus: true }); await new Promise((r) => setTimeout(r, 900)); return 'ok'; })()",
+		"wait": 900
+	},
+	{
 		"feature": "filter",
 		"caption": "The filter box with the word budget leaves only the matching tasks.",
 		"note": "All tasks.base",

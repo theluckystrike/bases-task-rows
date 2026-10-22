@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.4.0
+
+### Minor Changes
+
+- Add a Task progress view to Bases that shows one row for each note with its open, done and total tasks, a progress bar, the next due date and the overdue count.
+
 ## 1.3.0
 
 ### Minor Changes

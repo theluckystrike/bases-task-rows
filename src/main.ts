@@ -5,6 +5,7 @@ import { SPONSORS, onProChange, setProSource } from './pro';
 import { DEFAULT_SETTINGS, BasesTaskRowsSettingTab, normalizeSettings, type BasesTaskRowsSettings } from './settings';
 import { editTaskLine, nextOccurrenceLine, type TaskEdit } from './task';
 import { TaskRowsView, VIEW_TYPE, viewOptions } from './view';
+import { PROGRESS_VIEW_NAME, PROGRESS_VIEW_TYPE, TaskProgressView, progressViewOptions } from './progress-view';
 import { applyLineEdits, type LineEdit } from './write';
 import type { TaskRow } from './rows';
 import { setupHello } from './hello/index';
@@ -18,10 +19,10 @@ export interface EditOutcome {
 	conflicts: number;
 }
 
-/** Text of a new base file that shows the tasks of one folder. */
+/** Text of a new base file that shows the tasks of one folder, and a Task progress view with one row per note. */
 export function taskBaseText(folder: string): string {
 	const filter = folder === '/' || folder === '' ? '' : `filters:\n  and:\n    - file.inFolder(${JSON.stringify(folder)})\n`;
-	return `${filter}views:\n  - type: ${VIEW_TYPE}\n    name: Tasks\n    status: open\n    sort: due\n`;
+	return `${filter}views:\n  - type: ${VIEW_TYPE}\n    name: Tasks\n    status: open\n    sort: due\n  - type: ${PROGRESS_VIEW_TYPE}\n    name: ${PROGRESS_VIEW_NAME}\n    sort: progress\n`;
 }
 
 export default class BasesTaskRowsPlugin extends Plugin {
@@ -31,6 +32,7 @@ export default class BasesTaskRowsPlugin extends Plugin {
 	/** False when the Bases core plugin is off, so the view could not be registered. */
 	basesReady = false;
 	readonly views = new Set<TaskRowsView>();
+	readonly progressViews = new Set<TaskProgressView>();
 	private settingTab: BasesTaskRowsSettingTab | null = null;
 
 	async onload(): Promise<void> {
@@ -57,6 +59,13 @@ export default class BasesTaskRowsPlugin extends Plugin {
 			factory: (controller, containerEl) => new TaskRowsView(controller, containerEl, this),
 			options: () => viewOptions(),
 		});
+		const progressReady = this.registerBasesView(PROGRESS_VIEW_TYPE, {
+			name: PROGRESS_VIEW_NAME,
+			icon: 'percent',
+			factory: (controller, containerEl) => new TaskProgressView(controller, containerEl, this),
+			options: () => progressViewOptions(),
+		});
+		this.basesReady = this.basesReady && progressReady;
 
 		this.addCommand({
 			id: 'create-task-base',
@@ -74,6 +83,7 @@ export default class BasesTaskRowsPlugin extends Plugin {
 	onunload(): void {
 		setProSource(null);
 		this.views.clear();
+		this.progressViews.clear();
 	}
 
 	/**
@@ -84,7 +94,7 @@ export default class BasesTaskRowsPlugin extends Plugin {
 		let n = 0;
 		for (const leaf of this.app.workspace.getLeavesOfType('bases')) {
 			const el = leaf.view.containerEl;
-			const stale = el.querySelector('.btr-view') !== null && ![...this.views].some((v) => el.contains(v.rootEl));
+			const stale = el.querySelector('.btr-view') !== null && ![...this.views, ...this.progressViews].some((v) => el.contains(v.rootEl));
 			if (!stale) continue;
 			const state = leaf.getViewState();
 			await leaf.setViewState({ type: 'empty' });
@@ -109,6 +119,7 @@ export default class BasesTaskRowsPlugin extends Plugin {
 
 	refreshViews(): void {
 		for (const v of this.views) v.render();
+		for (const v of this.progressViews) v.render();
 	}
 
 	/**

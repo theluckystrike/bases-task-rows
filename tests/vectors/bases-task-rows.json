@@ -2,7 +2,7 @@
  "slug": "bases-task-rows",
  "module": "bases-task-rows/src/task",
  "function": "editAndParse",
- "note": "editAndParse(line, edit) applies one edit (none | done | open | date | today) to one Markdown task line and parses the result. expected = {line, task}: line is the new line (byte-identical outside the changed token; null when the input is not a task), task = {status, done, text, dates, priority 0..5 with 2 = none, tags, recurrence}.",
+ "note": "editAndParse(line, edit) applies one edit (none | done | open | date | today) to one Markdown task line and parses the result. expected = {line, task}: line is the new line (byte-identical outside the changed token; null when the input is not a task), task = {status, done, text, dates, priority 0..5 with 2 = none, tags, recurrence}. Cases with fn noteProgress: noteProgress(noteText, today) counts the tasks of one note for the Task progress view (open, done, cancelled, total, whole percent, next due date of an open task, overdue open tasks, progress cell text).",
  "cases": [
   {
    "name": "round trip keeps a Tasks line with priority, recurrence and block id byte for byte",
@@ -609,6 +609,96 @@
      "recurrence": null
     }
    }
+  },
+  {
+   "name": "progress 1: x and X are done, a note with 1 open and 2 done tasks is 67%",
+   "args": [
+    "- [ ] a\n- [x] b\n- [X] c\n",
+    "2026-10-10"
+   ],
+   "expected": {
+    "open": 1,
+    "done": 2,
+    "cancelled": 0,
+    "total": 3,
+    "percent": 67,
+    "nextDue": null,
+    "overdue": 0,
+    "progress": "67%"
+   },
+   "fn": "noteProgress"
+  },
+  {
+   "name": "progress 2: a cancelled task is not open, done or total",
+   "args": [
+    "- [-] a\n- [ ] b\n",
+    "2026-10-10"
+   ],
+   "expected": {
+    "open": 1,
+    "done": 0,
+    "cancelled": 1,
+    "total": 1,
+    "percent": 0,
+    "nextDue": null,
+    "overdue": 0,
+    "progress": "0%"
+   },
+   "fn": "noteProgress"
+  },
+  {
+   "name": "progress 3: a task inside a fenced code block does not count, so the progress cell is empty",
+   "args": [
+    "# Notes\n\n```md\n- [ ] in code\n- [x] also code\n```\n",
+    "2026-10-10"
+   ],
+   "expected": {
+    "open": 0,
+    "done": 0,
+    "cancelled": 0,
+    "total": 0,
+    "percent": null,
+    "nextDue": null,
+    "overdue": 0,
+    "progress": ""
+   },
+   "fn": "noteProgress"
+  },
+  {
+   "name": "progress 4: next due is the earliest due date of an open task, not of a done or cancelled task",
+   "args": [
+    "- [x] Done early 📅 2026-10-01\n- [ ] Later 📅 2026-10-20\n- [ ] Sooner [due:: 2026-10-15]\n- [ ] No date\n- [-] Dropped 📅 2026-10-02\n",
+    "2026-10-10"
+   ],
+   "expected": {
+    "open": 3,
+    "done": 1,
+    "cancelled": 1,
+    "total": 4,
+    "percent": 25,
+    "nextDue": "2026-10-15",
+    "overdue": 0,
+    "progress": "25%"
+   },
+   "fn": "noteProgress"
+  },
+  {
+   "name": "progress 5: overdue counts open tasks due before today, not a task due today",
+   "args": [
+    "- [ ] Late 📅 2026-10-09\n- [ ] Due today 📅 2026-10-10\n- [ ] Also late [due:: [[2026-10-01]]]\n- [x] Done late 📅 2026-10-01\n",
+    "2026-10-10"
+   ],
+   "expected": {
+    "open": 3,
+    "done": 1,
+    "cancelled": 0,
+    "total": 4,
+    "percent": 25,
+    "nextDue": "2026-10-01",
+    "overdue": 2,
+    "progress": "25%"
+   },
+   "fn": "noteProgress"
   }
  ]
 }

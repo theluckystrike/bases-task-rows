@@ -18,10 +18,13 @@ async function makePlugin(files: Record<string, string> = { 'Plan.md': NOTE }) {
 const rowsOf = (content: string) => collectTasks('Plan.md', 'Plan', content, [{ line: 1, task: ' ' }, { line: 2, task: ' ' }], []);
 
 describe('BasesTaskRowsPlugin', () => {
-	it('loads default settings and registers the Task rows view', async () => {
+	it('loads default settings and registers the Task rows and Task progress views', async () => {
 		const { plugin } = await makePlugin();
 		expect(plugin.settings).toEqual(DEFAULT_SETTINGS);
-		expect([...(plugin as unknown as { basesViewRegistrations__: Map<string, { name: string }> }).basesViewRegistrations__.keys()]).toEqual(['task-rows']);
+		const regs = (plugin as unknown as { basesViewRegistrations__: Map<string, { name: string }> }).basesViewRegistrations__;
+		expect([...regs.keys()]).toEqual(['task-rows', 'task-progress']);
+		expect(regs.get('task-progress')!.name).toBe('Task progress');
+		expect(plugin.basesReady).toBe(true);
 		expect(plugin.isPro()).toBe(false);
 		expect(isPro()).toBe(false);
 	});
@@ -85,8 +88,10 @@ describe('BasesTaskRowsPlugin', () => {
 		expect(await app.vault.read(app.vault.getFileByPath('Plan.md')!)).toBe('# Plan\n- [x] Water plants 🔁 every week 📅 2026-10-09 ✅ 2026-10-10\n- [ ] Call Ana\n');
 	});
 
-	it('writes a base file text with a folder filter and the task view', () => {
-		expect(taskBaseText('Projects')).toBe('filters:\n  and:\n    - file.inFolder("Projects")\nviews:\n  - type: task-rows\n    name: Tasks\n    status: open\n    sort: due\n');
+	it('writes a base file text with a folder filter, the task view and the Task progress view', () => {
+		expect(taskBaseText('Projects')).toBe(
+			'filters:\n  and:\n    - file.inFolder("Projects")\nviews:\n  - type: task-rows\n    name: Tasks\n    status: open\n    sort: due\n  - type: task-progress\n    name: Task progress\n    sort: progress\n',
+		);
 		expect(taskBaseText('/')).not.toContain('filters');
 	});
 

@@ -1,4 +1,4 @@
-// Writes the sample vault: 30 notes with 150 checklist tasks, plus three base files.
+// Writes the sample vault: 30 notes with 150 checklist tasks, plus four base files.
 //   node test/make-sample.mjs            -> docs/sample-notes/ and test/e2e/vault/Bases Task Rows/
 // Dates sit around 2026-10-10 so every date group (overdue, today, next 7 days, later) has rows.
 // One note uses CRLF line ends and one has a task inside a code block (not a task; the cache skips it).
@@ -73,6 +73,7 @@ const BASES = {
 	'All tasks.base': `filters:\n  and:\n    - file.inFolder("${DIR}")\nviews:\n  - type: task-rows\n    name: All tasks\n    status: all\n    sort: due\n`,
 	'This week.base': `filters:\n  and:\n    - file.inFolder("${DIR}")\nviews:\n  - type: task-rows\n    name: By date\n    status: open\n    sort: due\n    group: date\n  - type: task-rows\n    name: By tag\n    status: open\n    sort: priority\n    group: tag\n`,
 	'Project tasks.base': `filters:\n  and:\n    - file.inFolder("${DIR}/Projects")\nviews:\n  - type: task-rows\n    name: By project\n    status: open\n    sort: due\n    group: note\n  - type: table\n    name: Notes\n    order:\n      - file.name\n      - status\n`,
+	'Project progress.base': `filters:\n  and:\n    - file.inFolder("${DIR}/Projects")\nviews:\n  - type: task-progress\n    name: Task progress\n    sort: progress\n  - type: task-rows\n    name: Tasks\n    status: all\n    sort: file\n`,
 };
 
 const { out, count } = notes();

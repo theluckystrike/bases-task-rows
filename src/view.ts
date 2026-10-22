@@ -7,7 +7,7 @@ import type BasesTaskRowsPlugin from './main';
 
 export const VIEW_TYPE = 'task-rows';
 /** Wait after the last change before the rows are read again. */
-const DEBOUNCE_MS = 150;
+export const DEBOUNCE_MS = 150;
 
 const STATUS_OPTIONS: Record<StatusFilter, string> = { open: 'Open tasks', done: 'Done tasks', all: 'All tasks' };
 const SORT_OPTIONS: Record<SortKey, string> = { due: 'Due date', scheduled: 'Scheduled date', priority: 'Priority', text: 'Task text', note: 'Note name', file: 'Order in the notes' };
@@ -52,7 +52,8 @@ export interface Timing {
 
 const pad2 = (n: number): string => String(n).padStart(2, '0');
 /** Local date as YYYY-MM-DD. Plain Date, so the code does not depend on the moment types. */
-const today = (d = new Date()): string => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+export const localToday = (d = new Date()): string => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const today = localToday;
 
 export class TaskRowsView extends BasesView {
 	type = VIEW_TYPE;
