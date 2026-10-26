@@ -1,6 +1,6 @@
 // The "Task rows" Bases view: one row per checklist task in the notes the base selects.
-import { BasesView, Keymap, Notice, TFile, setIcon, type BasesAllOptions, type QueryController } from 'obsidian';
-import { isPro } from './pro';
+import { BasesView, Keymap, TFile, setIcon, type BasesAllOptions, type QueryController } from 'obsidian';
+import { isPro, proNotice } from './pro';
 import { FREE_LIMIT, arrangeRows, bucketOf, collectTasks, priorityText, type GroupKey, type SortKey, type StatusFilter, type TaskRow } from './rows';
 import type { TaskEdit } from './task';
 import type BasesTaskRowsPlugin from './main';
@@ -313,7 +313,7 @@ export class TaskRowsView extends BasesView {
 		el.value = value;
 		el.addEventListener('change', () => {
 			if (key === 'group' && el.value !== 'none' && !isPro()) {
-				new Notice('Grouping is a pro feature. Sponsor on GitHub, then sign in from the plugin settings.');
+				proNotice('Grouping is a pro feature.');
 				el.value = value;
 				return;
 			}

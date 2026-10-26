@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.5.1
+
+### Patch Changes
+
+- The Bases Task Rows notice for a Pro feature now has a Sponsor on GitHub button.
+
 ## 1.5.0
 
 ### Minor Changes
