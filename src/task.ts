@@ -68,7 +68,12 @@ const PRIORITY_RE = /(^|[ \t])(🔺|⏫|🔼|🔽|⏬)️?(?=[ \t]|$)/u;
 const SIGNS = '📅📆🗓⏳⌛🛫✅➕❌🔺⏫🔼🔽⏬🆔⛔🏁🔁';
 const RECUR_RE = new RegExp(`(^|[ \\t])🔁${VS}[ \\t]*([^${SIGNS}[(^]*?)(?=[ \\t]+[${SIGNS}[(^#]|[ \\t]*$)`, 'u');
 const ID_RE = new RegExp(`(^|[ \\t])(?:🆔|⛔|🏁)${VS}[ \\t]*[^ \\t${SIGNS}]+`, 'gu');
-const TAG_RE = /(^|[ \t])#([^\s#,.;:!?()[\]{}"'`|\\^=<>]+)/gu;
+// The tag rule of Obsidian (1.14.5): "#" after the start, a space, or an emphasis mark (* ~ = _), then the
+// characters that a tag can hold. General punctuation (U+2000-U+206F, such as an em dash or a curly quote) ends a tag.
+const TAG_CHARS = String.raw`[^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^\u0060{|}~\[\]\\\s]+`;
+const TAG_RE = new RegExp(`(^|[\\s*~=_])#(${TAG_CHARS})`, 'gu');
+/** Wikilinks, embeds and Markdown links. A "#" in their text or target is not a tag. */
+const LINK_RE = /!?\[\[[^\]\n]*\]\]|!?\[[^\]\n]*\]\([^)\n]*\)/gu;
 const BLOCK_ID = /([ \t]+\^[A-Za-z0-9-]+)[ \t]*$/;
 
 /** Code spans use a matching run of backticks. Keep offsets for edits to the original line. */
@@ -97,6 +102,16 @@ function codeRanges(text: string): Array<[number, number]> {
 		if (!closed) i = end;
 	}
 	return ranges;
+}
+
+/** The text with each link replaced by spaces of the same length, so offsets stay valid. */
+function withoutLinks(text: string): string {
+	return text.replace(LINK_RE, (m) => ' '.repeat(m.length));
+}
+
+/** Tag matches outside code spans and links, with offsets into text. */
+function tagMatches(text: string): RegExpMatchArray[] {
+	return [...withoutLinks(withoutCode(text)).matchAll(TAG_RE)];
 }
 
 function withoutCode(text: string): string {
@@ -164,7 +179,7 @@ function findPriority(body: string): number {
 /** Tags in the body, without the "#", in order, no repeats. Pure numbers are not tags (same rule as the app). */
 export function findTags(body: string): string[] {
 	const out: string[] = [];
-	for (const m of withoutCode(body).matchAll(TAG_RE)) {
+	for (const m of tagMatches(body)) {
 		const tag = m[2]!.replace(/\/+$/, '');
 		if (!tag || /^\d+$/.test(tag) || out.includes(tag)) continue;
 		out.push(tag);
@@ -191,7 +206,16 @@ function displayText(body: string): string {
 		}
 	}
 	s = s.replace(DV_FIELD_ALL, '$1').replace(new RegExp(PRIORITY_RE.source, 'gu'), '$1').replace(ID_RE, '$1').replace(RECUR_RE, '$1');
-	s = s.replace(TAG_RE, (all: string, pre: string, tag: string) => (/^\d+$/.test(tag) ? all : pre));
+	let removed = false;
+	// Remove the tags from the end, so the offsets of the earlier matches stay valid. Links keep their text.
+	for (const m of tagMatches(s).reverse()) {
+		if (/^\d+$/.test(m[2]!)) continue;
+		const at = m.index! + m[1]!.length;
+		s = s.slice(0, at) + s.slice(m.index! + m[0].length);
+		removed = true;
+	}
+	// "**call #tag**" leaves "**call **" and "**#tag**" leaves "****": drop the empty pair and the space before a closing mark.
+	if (removed) s = s.replace(/(\*\*|~~|==|__)\1/g, '').replace(/[ \t]+(\*\*|~~|==|__)(?=[ \t]|$)/g, '$1');
 	return s.replace(/[ \t]+/g, ' ').trim();
 }
 

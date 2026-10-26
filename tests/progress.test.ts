@@ -139,11 +139,12 @@ async function setup(files: Record<string, string> = FILES, options: Record<stri
 const cells = (el: HTMLElement) => Array.from(el.querySelectorAll<HTMLElement>('tr.btp-row')).map((tr) => Array.from(tr.querySelectorAll('td')).map((td) => td.textContent));
 
 describe('TaskProgressView in the mock app', () => {
-	it('registers "Task progress" next to "Task rows", with the three view options', async () => {
+	it('registers "Task progress" next to "Task rows", with the three old view options first', async () => {
 		const { reg } = await setup();
 		expect(reg.name).toBe('Task progress');
-		expect(progressViewOptions().map((o) => ('key' in o ? o.key : ''))).toEqual(['sort', 'descending', 'showEmpty']);
-		expect(progressViewOptions().map((o) => o.displayName)).toEqual(['Sort by', 'Sort highest first', 'Show notes without tasks']);
+		// 1.5.0 adds the tag option and the Pro toggle after the three options of 1.4.0.
+		expect(progressViewOptions().map((o) => ('key' in o ? o.key : ''))).toEqual(['progressSort', 'descending', 'showEmpty', 'tag', 'onlyWithoutNext']);
+		expect(progressViewOptions().map((o) => o.displayName).slice(0, 3)).toEqual(['Sort by', 'Sort highest first', 'Show notes without tasks']);
 	});
 
 	it('shows one row per note with tasks and the seven columns', async () => {

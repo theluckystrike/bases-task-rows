@@ -1,8 +1,8 @@
 # Bases Task Rows
 
-Bases Task Rows adds two views to Bases. "Task rows" shows each checklist task in the notes that a base selects as its own row, with the done box, the task text, the dates, the priority, the tags, the source note and the heading. Tick a box in the view and the plugin writes the change to that line. "Task progress" shows one row for each note, with its open and done task counts.
+Bases Task Rows adds two views to Bases. "Task rows" shows each checklist task in the notes of a base as its own row, with its dates, priority, tags, source note and heading. Tick a box in the view and the plugin writes the change to that line. "Task progress" shows one row for each note, with its open and done task counts.
 
-The view, the done box, sorting, filtering and up to 200 tasks per view are free. Pro removes the limit and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
+The view, the done box, sorting, filtering, a tag filter with a Next task column, and up to 200 tasks per view are free. Pro removes the limit and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
 
 ## Features
 
@@ -10,7 +10,7 @@ The view, the done box, sorting, filtering and up to 200 tasks per view are free
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/task-rows.png" alt="A base with 150 tasks from 30 notes, one row per task, with due date, scheduled date, priority, tags, note and heading" width="720">
 
-The base filters decide which notes count, for example "in the folder Projects" or "has the tag #client". The view then lists the task lines, such as `- [ ]` and `- [x]`, in those notes. A task-like line inside a code block does not count.
+The base filters decide which notes count. The view then lists the task lines, such as `- [ ]` and `- [x]`, in those notes. A task-like line inside a code block does not count.
 
 Select the task text or the note name to open the note at that line.
 
@@ -18,15 +18,15 @@ Select the task text or the note name to open the note at that line.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/bases-task-rows.gif" alt="Ticking two tasks in the Task rows view, and the source note shows the x and the done date" width="720">
 
-Tick the box and the plugin changes `[ ]` to `[x]` in the source line. If the line has a date, it also adds a done date (`✅ 2026-10-10` or `[completion:: 2026-10-10]`), like the Tasks plugin. Untick to remove it again.
+Tick the box and the plugin changes `[ ]` to `[x]` in the source line. If the line has a date, it also adds a done date (`✅ 2026-10-10` or `[completion:: 2026-10-10]`), like the Tasks plugin.
 
-Before it writes, the plugin checks that the line is still the line it read. If it changed, nothing is written and a notice tells you. Other lines and Windows line ends do not change.
+The plugin writes only when the line is still the line it read. Else a notice tells you. Other lines do not change.
 
 ### Sort and filter
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/filter.png" alt="The filter box with the word budget, which leaves only the matching tasks" width="720">
 
-The toolbar has a filter box, a Show menu (open, done or all tasks), a Sort menu and a reverse button. Sort by due date, scheduled date, priority, task text, note name or note order. The filter matches words in the task text, tags, note name and heading.
+The toolbar has a filter box, a Show menu, a Sort menu and a reverse button. The filter matches task text, tags, note and heading.
 
 ### Tasks emoji and Dataview fields
 
@@ -49,13 +49,21 @@ The Task column shows the text without these parts. A new date uses the format o
 
 The "Task progress" view shows one row for each note in the base, with the columns Note, Open, Done, Total, Progress, Next due and Overdue. `x` and `X` count as done. A cancelled task (`-`) is not in any count. Progress is done divided by total, as a bar and a whole percent. Next due is the earliest due date of an open task. Overdue counts the open tasks due before today.
 
-Select a row to open the note, or Ctrl or Cmd select it for a new tab. This view never changes a note. Free shows 200 notes.
+Select a row to open the note. This view never changes a note. Free shows 200 notes.
+
+### Count only tasks with a tag, and the Next task column
+
+<img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/next-task.png" alt="The Task progress view with Count only tasks with tag set to waiting: each project note shows its open waiting tasks and the text of the first one in the Next task column" width="720">
+
+Type a tag such as `#next-action` in the view option "Count only tasks with tag". The counts then use only the tasks with that tag in the task line. A "Next task" column shows the first open task with that tag in each note, so an empty cell shows a project with no next step. `#next` also counts `#next/call`. A tag has no spaces, so use `#next-action` for "next action". Spaces and commas separate tags.
+
+Pro counts several tags and adds the toggle "Only notes without a next task".
 
 ### Groups by date, note, heading or tag (Pro)
 
 <img src="https://raw.githubusercontent.com/theluckystrike/bases-task-rows/HEAD/docs/date-groups.png" alt="Open tasks grouped under Overdue, Today, Next 7 days, Later and No date" width="720">
 
-Group by date puts each open task under Overdue, Today, Next 7 days, Later or No date, by its due or scheduled date. Done tasks go under Done. You can also group by note, heading or tag.
+Group by date puts each open task under Overdue, Today, Next 7 days, Later or No date. You can also group by note, heading or tag.
 
 ### Edit due dates, move to today, complete many (Pro)
 
@@ -64,9 +72,9 @@ Group by date puts each open task under Overdue, Today, Next 7 days, Later or No
 With Pro you can:
 
 - Select a due date to change it. Press Enter to save, Escape to cancel. An empty date removes the due date.
-- Select the calendar button of a row to move the task to today (the due date, else the scheduled date).
+- Select the calendar button of a row to move the task to today.
 - Select rows with the boxes on the left, then select "Complete selected" or "Move selected to today". "Complete selected" skips done and cancelled tasks.
-- Tick a recurring task (a rule like "every week") to write the next occurrence on the line below. The other dates move by the same number of days. "When done" counts from the day you tick it.
+- Tick a recurring task (a rule like "every week") to write the next occurrence on the line below.
 
 ## Install
 
@@ -105,8 +113,9 @@ After a minor or major update, this plugin opens one What's new tab in the backg
 | Done date when you tick a task | Auto | Auto, Always, Never |
 | Format of new dates | Tasks emoji | Tasks emoji or Dataview field |
 | Task progress view: Sort by, Sort highest first, Show notes without tasks | Progress, off, off | Progress, Open tasks, Next due or Note name; on or off; on or off |
+| Task progress view: Count only tasks with tag, Only notes without a next task (Pro) | Empty, off | Tags; on or off |
 
-Auto adds a done date only to lines with a date. The Task rows view options are Show, Sort by, reverse sort, Group by (Pro) and four columns.
+Auto adds a done date only to lines with a date.
 
 ## FAQ
 
@@ -141,8 +150,6 @@ npm ci
 npm run build
 npm test
 ```
-
-The tests cover reading and changing task lines in both formats.
 
 ## License
 

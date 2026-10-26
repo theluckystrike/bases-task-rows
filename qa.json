@@ -14,6 +14,13 @@
 		"wait": 900
 	},
 	{
+		"feature": "next-task",
+		"caption": "Count only tasks with tag set to waiting: each project note counts only its waiting tasks, and the Next task column shows the first open one.",
+		"note": "Project progress.base",
+		"eval": "(async () => { const kept = app.workspace.getMostRecentLeaf(); for (const leaf of [...app.workspace.getLeavesOfType('markdown'), ...app.workspace.getLeavesOfType('bases')]) if (leaf !== kept) leaf.detach(); await kept.setViewState({ type: 'bases', state: { file: 'Bases Task Rows/Project progress.base', viewName: 'Waiting' }, active: true }); app.workspace.setActiveLeaf(kept, { focus: true }); await new Promise((r) => setTimeout(r, 1200)); return 'ok'; })()",
+		"wait": 900
+	},
+	{
 		"feature": "filter",
 		"caption": "The filter box with the word budget leaves only the matching tasks.",
 		"note": "All tasks.base",

@@ -1,7 +1,6 @@
 {
 	"name": "bases-task-rows",
-	"repository": {"type": "git", "url": "theluckystrike/bases-task-rows.git"},
-	"version": "1.4.0",
+	"version": "1.5.0",
 	"private": true,
 	"description": "Shows each checklist task in the notes a base selects as its own row, with due dates, tags and the source note, and ticks tasks from the view.",
 	"main": "main.js",

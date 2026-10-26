@@ -90,7 +90,7 @@ describe('BasesTaskRowsPlugin', () => {
 
 	it('writes a base file text with a folder filter, the task view and the Task progress view', () => {
 		expect(taskBaseText('Projects')).toBe(
-			'filters:\n  and:\n    - file.inFolder("Projects")\nviews:\n  - type: task-rows\n    name: Tasks\n    status: open\n    sort: due\n  - type: task-progress\n    name: Task progress\n    sort: progress\n',
+			'filters:\n  and:\n    - file.inFolder("Projects")\nviews:\n  - type: task-rows\n    name: Tasks\n    status: open\n    rowSort: due\n  - type: task-progress\n    name: Task progress\n    progressSort: progress\n',
 		);
 		expect(taskBaseText('/')).not.toContain('filters');
 	});

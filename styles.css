@@ -147,6 +147,12 @@
 	min-width: 12em;
 }
 
+.btp-table .btp-col-next {
+	min-width: 12em;
+	max-width: 24em;
+	overflow-wrap: anywhere;
+}
+
 .btp-table .btp-col-progress {
 	min-width: 10em;
 	white-space: nowrap;

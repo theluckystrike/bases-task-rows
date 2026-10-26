@@ -62,14 +62,34 @@ describe(`${pluginId} pro (GitHub Sponsors, stubbed network)`, function () {
 
 	it('a $5 monthly sponsor gets Pro: rows group by date bucket in a fixed order', async function () {
 		expect(await signInWith(sponsoring(500))).toMatchObject({ pro: true, status: 'pro' });
-		await setView('group', 'date');
-		await browser.waitUntil(async () => ((await viewState())?.groups.length ?? 0) > 0, { timeout: 5000 });
-		const labels = (await viewState())!.groups.map((g) => g.replace(/ \(\d+\)$/, ''));
-		const order = ['Overdue', 'Today', 'Next 7 days', 'Later', 'No date', 'Done'];
-		expect(labels.length).toBeGreaterThan(2);
-		expect(labels).toEqual(order.filter((l) => labels.includes(l)));
-		const counts = (await viewState())!.groups.map((g) => Number(/\((\d+)\)$/.exec(g)![1]));
-		expect(counts.reduce((a, b) => a + b, 0)).toBe(OPEN);
+		// The sample vault has fixed dates. This note adds open tasks due today, in 3 days and in 30 days of the run
+		// date, so the Today, Next 7 days and Later buckets always have rows. The test deletes the note at the end.
+		const rel = `${DIR}/Relative dates.md`;
+		await browser.executeObsidian(async ({ app, obsidian }, path) => {
+			const d = (n: number) => obsidian.moment().add(n, 'days').format('YYYY-MM-DD');
+			await app.vault.create(path, `- [ ] Due today 📅 ${d(0)}\n- [ ] Due soon 📅 ${d(3)}\n- [ ] Due later 📅 ${d(30)}\n`);
+		}, rel);
+		try {
+			await waitRows(Math.min(OPEN + 3, 200));
+			await setView('group', 'date');
+			await browser.waitUntil(async () => ((await viewState())?.groups.length ?? 0) > 2, { timeout: 5000 });
+			const labels = (await viewState())!.groups.map((g) => g.replace(/ \(\d+\)$/, ''));
+			const order = ['Overdue', 'Today', 'Next 7 days', 'Later', 'No date', 'Done'];
+			expect(labels.length).toBeGreaterThan(2);
+			expect(labels).toEqual(expect.arrayContaining(['Today', 'Next 7 days', 'Later']));
+			expect(labels).toEqual(order.filter((l) => labels.includes(l)));
+			const counts = (await viewState())!.groups.map((g) => Number(/\((\d+)\)$/.exec(g)![1]));
+			expect(counts.reduce((a, b) => a + b, 0)).toBe(OPEN + 3);
+		} finally {
+			await browser.executeObsidian(async ({ app }, path) => {
+				const f = app.vault.getFileByPath(path);
+				if (f) await app.vault.delete(f);
+			}, rel);
+			await browser.waitUntil(async () => {
+				const g = (await viewState())?.groups ?? [];
+				return g.map((x) => Number(/\((\d+)\)$/.exec(x)?.[1] ?? 0)).reduce((a, b) => a + b, 0) === OPEN;
+			}, { timeout: 5000 });
+		}
 	});
 
 	it('groups by note, heading and tag', async function () {
@@ -117,7 +137,7 @@ describe(`${pluginId} pro (GitHub Sponsors, stubbed network)`, function () {
 			const lines = Array.from({ length: 20 }, (_, i) => `- [ ] Perf task ${n}-${i} #perf/n${n % 7} 📅 2026-${String((i % 12) + 1).padStart(2, '0')}-${String((n % 28) + 1).padStart(2, '0')}`);
 			files[`${DIR}/Perf/Note ${n}.md`] = `# Note ${n}\n\n## Tasks\n\n${lines.join('\n')}\n`;
 		}
-		files[`${DIR}/Perf.base`] = `filters:\n  and:\n    - file.inFolder("${DIR}/Perf")\nviews:\n  - type: task-rows\n    name: Perf\n    status: all\n    sort: due\n`;
+		files[`${DIR}/Perf.base`] = `filters:\n  and:\n    - file.inFolder("${DIR}/Perf")\nviews:\n  - type: task-rows\n    name: Perf\n    status: all\n    rowSort: due\n`;
 		await browser.executeObsidian(async ({ app }, f) => {
 			if (!app.vault.getFolderByPath('Bases Task Rows/Perf')) await app.vault.createFolder('Bases Task Rows/Perf');
 			for (const [path, text] of Object.entries(f)) await app.vault.create(path, text);

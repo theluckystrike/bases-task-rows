@@ -39,14 +39,45 @@ export function wholePercent(done: number, total: number): number | null {
 	return p;
 }
 
-/** Counts for one note from its parsed tasks. today is YYYY-MM-DD in local time. */
-export function progressOf(tasks: Pick<TaskInfo, 'status' | 'dates'>[], today: string): NoteProgress {
+/**
+ * Tags of the "Count only tasks with tag" option: lower case, without "#", in order, no repeats.
+ * Commas and spaces separate tags. "#" alone or an empty text gives no tags.
+ */
+export function parseTagFilter(text: string): string[] {
+	const out: string[] = [];
+	for (const part of text.split(/[\s,]+/u)) {
+		const tag = part.replace(/^#+/u, '').replace(/\/+$/u, '').toLowerCase();
+		if (tag && !out.includes(tag)) out.push(tag);
+	}
+	return out;
+}
+
+/**
+ * True when one of the task tags matches one of the filter tags. A filter tag matches the same tag and its
+ * nested tags: "next" matches #next and #next/action, "next/action" does not match #next. Letter case is ignored.
+ */
+export function hasFilterTag(tags: readonly string[], filter: readonly string[]): boolean {
+	for (const t of tags) {
+		const tag = t.toLowerCase();
+		for (const f of filter) if (tag === f || tag.startsWith(`${f}/`)) return true;
+	}
+	return false;
+}
+
+type ProgressTask = Pick<TaskInfo, 'status' | 'dates'> & { tags?: readonly string[] };
+
+/**
+ * Counts for one note from its parsed tasks. today is YYYY-MM-DD in local time.
+ * With filter tags, only the tasks with a matching tag count. An empty filter counts every task.
+ */
+export function progressOf(tasks: ProgressTask[], today: string, filter: readonly string[] = []): NoteProgress {
 	let open = 0;
 	let done = 0;
 	let cancelled = 0;
 	let overdue = 0;
 	let nextDue: string | null = null;
 	for (const t of tasks) {
+		if (filter.length && !hasFilterTag(t.tags ?? [], filter)) continue;
 		const state = taskState(t.status);
 		if (state === 'done') done++;
 		else if (state === 'cancelled') cancelled++;
@@ -61,6 +92,19 @@ export function progressOf(tasks: Pick<TaskInfo, 'status' | 'dates'>[], today: s
 	}
 	const total = open + done;
 	return { open, done, cancelled, total, percent: wholePercent(done, total), nextDue, overdue };
+}
+
+/**
+ * Text of the "Next task" cell: the first open task with a matching tag, in file order, or null when there is none.
+ * The text has no tags, dates or priority. When that leaves no text, the cell shows the task tags with "#".
+ */
+export function nextTaskOf(tasks: Pick<TaskInfo, 'status' | 'text' | 'tags'>[], filter: readonly string[]): string | null {
+	for (const t of tasks) {
+		if (taskState(t.status) !== 'open') continue;
+		if (filter.length && !hasFilterTag(t.tags, filter)) continue;
+		return t.text.trim() || t.tags.map((x) => `#${x}`).join(' ');
+	}
+	return null;
 }
 
 /** Text of the Progress cell: "67%", or "" when the note has no tasks. */
@@ -105,11 +149,31 @@ export function noteProgress(content: string, today: string, taskLines?: number[
 	return { ...p, progress: progressText(p) };
 }
 
+/**
+ * Counts of one note with the "Count only tasks with tag" text, and the Next task cell. This is the function of the
+ * tag golden vectors. any is the total of every task of the note, for the "Show notes without tasks" filter.
+ */
+export function noteTagProgress(content: string, today: string, tagText: string): NoteProgress & { progress: string; nextTask: string | null; any: number } {
+	const tasks: TaskInfo[] = [];
+	const lines = content.split('\n');
+	for (const n of taskLinesOutsideCode(content)) {
+		const info = parseTaskLine(lines[n]!);
+		if (info) tasks.push(info);
+	}
+	const filter = parseTagFilter(tagText);
+	const p = progressOf(tasks, today, filter);
+	return { ...p, progress: progressText(p), nextTask: filter.length ? nextTaskOf(tasks, filter) : null, any: progressOf(tasks, today).total };
+}
+
 export interface ProgressRow {
 	path: string;
 	/** Note name without the extension. */
 	note: string;
 	progress: NoteProgress;
+	/** Total of every task of the note (no tag filter). Missing means progress.total. */
+	any?: number;
+	/** Text of the first open matching task, or null. Missing when no tag is set. */
+	nextTask?: string | null;
 }
 
 export type ProgressSort = 'progress' | 'open' | 'due' | 'note';
@@ -122,11 +186,13 @@ export interface ProgressOptions {
 	showEmpty: boolean;
 	/** Largest number of note rows; Infinity for no cap. */
 	limit: number;
+	/** Keep only rows whose nextTask is null (Pro, only with a tag). */
+	onlyWithoutNext?: boolean;
 }
 
 export interface ArrangedProgress {
 	rows: ProgressRow[];
-	/** Rows after the "Show notes without tasks" filter, before the cap. */
+	/** Rows after the "Show notes without tasks" and "Only notes without a next task" filters, before the cap. */
 	matched: number;
 }
 
@@ -144,7 +210,8 @@ function cmpMaybe<T extends string | number>(a: T | null, b: T | null, dir: numb
 /** Filter, sort, then cap. The cap keeps the first rows in sort order. */
 export function arrangeProgress(rows: ProgressRow[], o: ProgressOptions): ArrangedProgress {
 	const dir = o.descending ? -1 : 1;
-	const kept = o.showEmpty ? [...rows] : rows.filter((r) => r.progress.total > 0);
+	let kept = o.showEmpty ? [...rows] : rows.filter((r) => (r.any ?? r.progress.total) > 0);
+	if (o.onlyWithoutNext) kept = kept.filter((r) => (r.nextTask ?? null) === null);
 	const cmp = (a: ProgressRow, b: ProgressRow): number => {
 		switch (o.sort) {
 			case 'progress':

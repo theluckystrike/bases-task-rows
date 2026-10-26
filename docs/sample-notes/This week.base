@@ -5,10 +5,10 @@ views:
   - type: task-rows
     name: By date
     status: open
-    sort: due
+    rowSort: due
     group: date
   - type: task-rows
     name: By tag
     status: open
-    sort: priority
+    rowSort: priority
     group: tag

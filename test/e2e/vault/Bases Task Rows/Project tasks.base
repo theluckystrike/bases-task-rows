@@ -5,7 +5,7 @@ views:
   - type: task-rows
     name: By project
     status: open
-    sort: due
+    rowSort: due
     group: note
   - type: table
     name: Notes

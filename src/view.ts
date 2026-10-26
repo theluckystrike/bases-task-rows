@@ -14,10 +14,13 @@ const SORT_OPTIONS: Record<SortKey, string> = { due: 'Due date', scheduled: 'Sch
 const GROUP_OPTIONS: Record<GroupKey, string> = { none: 'No groups', note: 'Note', heading: 'Heading', tag: 'Tag', date: 'Date: overdue, today, next 7 days' };
 
 /** View options in the Bases view menu. They are saved in the base file, one set per view. */
+/** View key of "Sort by". Bases keeps the key "sort" for its own sort list and drops a text value there. */
+export const ROW_SORT_KEY = 'rowSort';
+
 export function viewOptions(): BasesAllOptions[] {
 	return [
 		{ type: 'dropdown', key: 'status', displayName: 'Show', default: 'open', options: STATUS_OPTIONS },
-		{ type: 'dropdown', key: 'sort', displayName: 'Sort by', default: 'due', options: SORT_OPTIONS },
+		{ type: 'dropdown', key: ROW_SORT_KEY, displayName: 'Sort by', default: 'due', options: SORT_OPTIONS },
 		{ type: 'toggle', key: 'descending', displayName: 'Sort newest or highest first', default: false },
 		{ type: 'dropdown', key: 'group', displayName: 'Group by (pro)', default: 'none', options: GROUP_OPTIONS },
 		{
@@ -170,7 +173,8 @@ export class TaskRowsView extends BasesView {
 		const pro = isPro();
 		const day = today();
 		const status = this.opt<StatusFilter>('status', STATUS_OPTIONS, 'open');
-		const sort = this.opt<SortKey>('sort', SORT_OPTIONS, 'due');
+		// The old key "sort" is the fallback. Bases keeps "sort" for its own sort list (see ROW_SORT_KEY).
+		const sort = this.opt<SortKey>(ROW_SORT_KEY, SORT_OPTIONS, this.opt<SortKey>('sort', SORT_OPTIONS, 'due'));
 		const wanted = this.opt<GroupKey>('group', GROUP_OPTIONS, 'none');
 		const group = pro ? wanted : 'none';
 		const cols = { scheduled: this.flag('showScheduled', true), priority: this.flag('showPriority', true), tags: this.flag('showTags', true), heading: this.flag('showHeading', true) };
@@ -287,7 +291,7 @@ export class TaskRowsView extends BasesView {
 			this.render();
 		});
 		this.select(bar, 'status', STATUS_OPTIONS, s.status, 'Show');
-		this.select(bar, 'sort', SORT_OPTIONS, s.sort, 'Sort by');
+		this.select(bar, ROW_SORT_KEY, SORT_OPTIONS, s.sort, 'Sort by');
 		const dir = bar.createEl('button', { cls: 'clickable-icon btr-dir', attr: { 'aria-label': 'Reverse the sort' } });
 		setIcon(dir, this.flag('descending', false) ? 'arrow-up-wide-narrow' : 'arrow-down-narrow-wide');
 		dir.addEventListener('click', () => {

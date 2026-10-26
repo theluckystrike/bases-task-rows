@@ -70,10 +70,10 @@ function notes() {
 }
 
 const BASES = {
-	'All tasks.base': `filters:\n  and:\n    - file.inFolder("${DIR}")\nviews:\n  - type: task-rows\n    name: All tasks\n    status: all\n    sort: due\n`,
-	'This week.base': `filters:\n  and:\n    - file.inFolder("${DIR}")\nviews:\n  - type: task-rows\n    name: By date\n    status: open\n    sort: due\n    group: date\n  - type: task-rows\n    name: By tag\n    status: open\n    sort: priority\n    group: tag\n`,
-	'Project tasks.base': `filters:\n  and:\n    - file.inFolder("${DIR}/Projects")\nviews:\n  - type: task-rows\n    name: By project\n    status: open\n    sort: due\n    group: note\n  - type: table\n    name: Notes\n    order:\n      - file.name\n      - status\n`,
-	'Project progress.base': `filters:\n  and:\n    - file.inFolder("${DIR}/Projects")\nviews:\n  - type: task-progress\n    name: Task progress\n    sort: progress\n  - type: task-rows\n    name: Tasks\n    status: all\n    sort: file\n`,
+	'All tasks.base': `filters:\n  and:\n    - file.inFolder("${DIR}")\nviews:\n  - type: task-rows\n    name: All tasks\n    status: all\n    rowSort: due\n`,
+	'This week.base': `filters:\n  and:\n    - file.inFolder("${DIR}")\nviews:\n  - type: task-rows\n    name: By date\n    status: open\n    rowSort: due\n    group: date\n  - type: task-rows\n    name: By tag\n    status: open\n    rowSort: priority\n    group: tag\n`,
+	'Project tasks.base': `filters:\n  and:\n    - file.inFolder("${DIR}/Projects")\nviews:\n  - type: task-rows\n    name: By project\n    status: open\n    rowSort: due\n    group: note\n  - type: table\n    name: Notes\n    order:\n      - file.name\n      - status\n`,
+	'Project progress.base': `filters:\n  and:\n    - file.inFolder("${DIR}/Projects")\nviews:\n  - type: task-progress\n    name: Task progress\n    progressSort: progress\n  - type: task-rows\n    name: Tasks\n    status: all\n    rowSort: file\n  - type: task-progress\n    name: Waiting\n    progressSort: note\n    tag: waiting\n`,
 };
 
 const { out, count } = notes();

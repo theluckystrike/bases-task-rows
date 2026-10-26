@@ -4,8 +4,12 @@ filters:
 views:
   - type: task-progress
     name: Task progress
-    sort: progress
+    progressSort: progress
   - type: task-rows
     name: Tasks
     status: all
-    sort: file
+    rowSort: file
+  - type: task-progress
+    name: Waiting
+    progressSort: note
+    tag: waiting

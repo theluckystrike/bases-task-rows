@@ -22,7 +22,7 @@ export interface EditOutcome {
 /** Text of a new base file that shows the tasks of one folder, and a Task progress view with one row per note. */
 export function taskBaseText(folder: string): string {
 	const filter = folder === '/' || folder === '' ? '' : `filters:\n  and:\n    - file.inFolder(${JSON.stringify(folder)})\n`;
-	return `${filter}views:\n  - type: ${VIEW_TYPE}\n    name: Tasks\n    status: open\n    sort: due\n  - type: ${PROGRESS_VIEW_TYPE}\n    name: ${PROGRESS_VIEW_NAME}\n    sort: progress\n`;
+	return `${filter}views:\n  - type: ${VIEW_TYPE}\n    name: Tasks\n    status: open\n    rowSort: due\n  - type: ${PROGRESS_VIEW_TYPE}\n    name: ${PROGRESS_VIEW_NAME}\n    progressSort: progress\n`;
 }
 
 export default class BasesTaskRowsPlugin extends Plugin {

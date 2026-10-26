@@ -5,4 +5,4 @@ views:
   - type: task-rows
     name: All tasks
     status: all
-    sort: due
+    rowSort: due

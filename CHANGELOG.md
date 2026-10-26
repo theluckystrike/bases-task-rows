@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.5.0
+
+### Minor Changes
+
+- 2afb87f: Add the option "Count only tasks with tag" to the Task progress view. With a tag, the counts use only the tasks with that tag in the task line, the tag also counts its nested tags (#next counts #next/call), and a new Next task column shows the text of the first open task with that tag in the note. With Pro, the option takes several tags, and the toggle "Only notes without a next task" shows only the notes with an empty Next task cell. With an empty option, the view is the same as before. Tags in task lines now follow the tag rule of Obsidian in both views. A tag in bold, struck or highlighted text counts, an em dash or a curly apostrophe ends a tag, and a "#" in the text of a link is not a tag. The Sort by choice of both views is now saved in the base file under its own key (rowSort and progressSort), because Bases dropped it under the key sort. A Sort by saved by 1.4.0 or earlier was not kept by Bases. Pick Sort by again once.
+
 ## 1.4.0
 
 ### Minor Changes
