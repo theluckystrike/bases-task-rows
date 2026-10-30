@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.5.2
+
+### Patch Changes
+
+- The Sponsor on GitHub button of Bases Task Rows now opens the one-time payment tab of GitHub Sponsors.
+
 ## 1.5.1
 
 ### Patch Changes
