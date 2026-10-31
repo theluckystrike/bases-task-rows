@@ -4,6 +4,18 @@ Bases Task Rows adds two views to Bases. "Task rows" shows each checklist task i
 
 The view, the done box, sorting, filtering, a tag filter with a Next task column, and up to 200 tasks per view are free. Pro removes the limit and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
 
+## Quick start
+
+Paste this into a note:
+
+```markdown
+- [ ] Write the report 📅 2026-11-05
+- [ ] Call the printer
+- [x] Book the room
+```
+
+Open a folder of notes with tasks and run the command "Create a task base for the current folder". The plugin creates `Tasks.base` in that folder with a Task rows view and a Task progress view, and opens it. Tick the box and the plugin changes `[ ]` to `[x]` in the source line.
+
 ## Features
 
 ### One row per task
@@ -96,7 +108,7 @@ Both views update by themselves when a note changes.
 
 To get Pro:
 
-1. Sponsor [theluckystrike on GitHub Sponsors](https://github.com/sponsors/theluckystrike?metadata_source=bases-task-rows) with $5 a month, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply.
+1. Sponsor [theluckystrike on GitHub Sponsors](https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=bases-task-rows) with $5 a month, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply.
 2. In Obsidian, open the settings of Bases Task Rows and select "Sign in with GitHub".
 3. The plugin copies a code and opens github.com/login/device. Paste the code there and approve.
 
@@ -131,7 +143,7 @@ Only when you tick a box or use a Pro action. Then it changes only the box and t
 
 The core features are free. Pro features need a GitHub Sponsors sponsorship of theluckystrike: $5 a month or more, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply. Your notes stay readable and editable with or without Pro.
 
-GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike. You need no account for the free features. Pro needs the GitHub account that sponsors.
+GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=bases-task-rows. You need no account for the free features. Pro needs the GitHub account that sponsors.
 
 Until you select "Sign in with GitHub" in the settings, Bases Task Rows makes no network requests. Sign in uses the GitHub device flow. Bases Task Rows sends its public client ID and the scope `read:user` to `https://github.com/login/device/code` and shows you a code. While you enter the code at https://github.com/login/device, it asks `https://github.com/login/oauth/access_token` every few seconds to check the sign-in status. The scope permits profile reads only. GitHub needs this access to show the sponsorship tier. It grants no repository scope and no write access.
 
