@@ -2,7 +2,7 @@
 
 Bases Task Rows adds two views to Bases. "Task rows" shows each checklist task in the notes of a base as its own row, with its dates, priority, tags, source note and heading. Tick a box in the view and the plugin writes the change to that line. "Task progress" shows one row for each note, with its open and done task counts.
 
-The view, the done box, sorting, filtering, a tag filter with a Next task column, and up to 200 tasks per view are free. Pro removes the limit and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task. Pro costs $5 a month, or $15 once, through GitHub Sponsors.
+The view, the done box, sorting, filtering, a tag filter with a Next task column, and up to 200 tasks per view are free. Pro removes the limit and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task.
 
 ## Quick start
 
@@ -142,6 +142,8 @@ Only when you tick a box or use a Pro action. Then it changes only the box and t
 ## Payment, account and network
 
 The core features are free. Pro features need a GitHub Sponsors sponsorship of theluckystrike: $5 a month or more, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply. Your notes stay readable and editable with or without Pro.
+
+[One payment turns on Pro in every NoteMods plugin](https://notemods.com/pro/).
 
 GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=bases-task-rows. You need no account for the free features. Pro needs the GitHub account that sponsors.
 
