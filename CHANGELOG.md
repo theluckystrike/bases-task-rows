@@ -1,5 +1,11 @@
 # bases-task-rows
 
+## 1.5.3
+
+### Patch Changes
+
+- 371e979: The Pro notice of Bases Task Rows now says that one payment turns on Pro in every NoteMods plugin.
+
 ## 1.5.2
 
 ### Patch Changes

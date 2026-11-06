@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import vectors from './vectors/bases-task-rows.json';
 import { App, BasesEntry, BasesQueryResult, BasesViewConfig } from 'obsidian-test-mocks/obsidian';
 import BasesTaskRowsPlugin from '../src/main';
@@ -116,6 +116,12 @@ const FILES = {
 	'P/Code only.md': '```\n- [ ] code\n- [x] code\n```\n',
 };
 
+// Each view that setup opens is unloaded after its test. Unload stops the 150 ms reload timer, so no timer draws after the test file ends (CI run 41977351927: "document is not defined").
+const openViews: TaskProgressView[] = [];
+afterEach(() => {
+	for (const v of openViews.splice(0)) v.unload();
+});
+
 async function setup(files: Record<string, string> = FILES, options: Record<string, unknown> = {}) {
 	const app = App.createConfigured__({ files });
 	const plugin = new BasesTaskRowsPlugin(app as never, manifest as never);
@@ -132,6 +138,7 @@ async function setup(files: Record<string, string> = FILES, options: Record<stri
 	result.setData__(Object.keys(files).map((p) => BasesEntry.create__({}, app.vault.getFileByPath(p)!)));
 	v.data = result;
 	view.load();
+	openViews.push(view);
 	await view.reload();
 	return { app, plugin, view, el, reg, config: v.config };
 }

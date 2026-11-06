@@ -6,6 +6,7 @@ import { arrangeProgress, hasFilterTag, nextTaskOf, noteProgress, noteTagProgres
 import { NEXT_TASK_COLUMN, PROGRESS_COLUMNS, PROGRESS_VIEW_TYPE, TaskProgressView } from '../src/progress-view';
 import { parseTaskLine, type TaskInfo } from '../src/task';
 import manifest from '../manifest.json';
+import { GROWTH_LIMIT, pairedRatio } from './growth';
 
 // 1.5.0: "Count only tasks with tag" and the Next task column of the Task progress view (forum 103074 post 6).
 
@@ -200,15 +201,20 @@ describe('TaskProgressView with "Count only tasks with tag"', () => {
 		expect(td.querySelector('img')).toBeNull();
 	});
 
-	it('1,000 notes with a tag render in under 1 second in the mock app', async () => {
-		const files: Record<string, string> = {};
-		for (let i = 0; i < 1000; i++) files[`n/${String(i).padStart(4, '0')}.md`] = `- [ ] t${i} ${i % 2 ? '#next-action' : ''}\n- [x] d\n`;
-		const { el, view, pro } = await setup(files, { tag: 'next-action', sort: 'note' });
+	it('1,000 notes with a tag render in the mock app, and the render time grows linearly with the note count', async () => {
+		const filesOf = (n: number) => {
+			const files: Record<string, string> = {};
+			for (let i = 0; i < n; i++) files[`n/${String(i).padStart(4, '0')}.md`] = `- [ ] t${i} ${i % 2 ? '#next-action' : ''}\n- [x] d\n`;
+			return files;
+		};
+		const small = await setup(filesOf(100), { tag: 'next-action', sort: 'note' });
+		small.pro(true);
+		const { el, view, pro } = await setup(filesOf(1000), { tag: 'next-action', sort: 'note' });
 		expect(view.shownPaths().length).toBe(200);
 		pro(true);
-		const t0 = performance.now();
-		view.render();
-		expect(performance.now() - t0).toBeLessThan(1000);
+		// Growth guard (s1101): render of 1,000 notes against render of 100 notes, timed in this test. Linear about 10, quadratic about 100.
+		const g = pairedRatio(() => small.view.render(), () => view.render());
+		expect(g.ratio, g.text).toBeLessThan(GROWTH_LIMIT);
 		expect(view.shownPaths().length).toBe(1000);
 		expect(el.querySelectorAll('td.btp-col-next').length).toBe(1000);
 	});

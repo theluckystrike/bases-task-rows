@@ -1,9 +1,9 @@
 {
 	"id": "bases-task-rows",
 	"name": "Bases Task Rows",
-	"version": "1.5.2",
+	"version": "1.5.3",
 	"changes": [
-		"The Sponsor on GitHub button now opens the one-time payment tab of GitHub Sponsors."
+		"The Pro notice of Bases Task Rows now says that one payment turns on Pro in every NoteMods plugin."
 	],
 	"tip": "Type #next-action in \"Count only tasks with tag\" of a Task progress view to see which project notes have no next step.",
 	"thanks": "Hi, I am Michael, a solo developer in Poland. Bases Task Rows is one of over 100 small plugins that I make. Thank you for using it with Bases. Bases is still new, and your setups teach me a lot.",
