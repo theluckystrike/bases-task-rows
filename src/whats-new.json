@@ -1,7 +1,7 @@
 {
 	"id": "bases-task-rows",
 	"name": "Bases Task Rows",
-	"version": "1.5.3",
+	"version": "1.5.4",
 	"changes": [
 		"The Pro notice of Bases Task Rows now says that one payment turns on Pro in every NoteMods plugin."
 	],

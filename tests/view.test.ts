@@ -3,6 +3,7 @@ import { App, BasesEntry, BasesQueryResult, BasesViewConfig } from 'obsidian-tes
 import BasesTaskRowsPlugin from '../src/main';
 import { TaskRowsView } from '../src/view';
 import manifest from '../manifest.json';
+import { budget } from './time-scale';
 
 const FILES = {
 	'P/a.md': '# A\n- [ ] Pay rent 📅 2026-10-12 #home\n- [x] Ship v2 ✅ 2026-10-01\n',
@@ -85,7 +86,7 @@ describe('TaskRowsView in the mock app', () => {
 		(plugin.pro as unknown as { isPro: () => boolean }).isPro = () => true;
 		view.render();
 		expect(view.timing.rows).toBe(2000);
-	}, 30000);
+	}, budget(30000));
 
 	it('reads the rows again when the metadata cache catches up after a write', async () => {
 		const note = '- [ ] A\n- [ ] B\n- [ ] C\n';
