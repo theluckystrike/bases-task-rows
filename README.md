@@ -1,5 +1,7 @@
 # Bases Task Rows
 
+[![Pro: $15 once or $5 a month on GitHub Sponsors](https://img.shields.io/badge/Pro-%2415%20once%20or%20%245%2Fmonth-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/theluckystrike) Pro costs [$15 one time](https://github.com/sponsors/theluckystrike/sponsorships?tier_id=666162&metadata_source=bases-task-rows-readme) or [$5 a month](https://github.com/sponsors/theluckystrike/sponsorships?tier_id=666161&metadata_source=bases-task-rows-readme) on GitHub Sponsors. One sponsorship turns on Pro in every NoteMods Obsidian plugin that has Pro.
+
 Bases Task Rows adds two views to Bases. "Task rows" shows each checklist task in the notes of a base as its own row, with its dates, priority, tags, source note and heading. Tick a box in the view and the plugin writes the change to that line. "Task progress" shows one row for each note, with its open and done task counts.
 
 The view, the done box, sorting, filtering, a tag filter with a Next task column, and up to 200 tasks per view are free. Pro removes the limit and adds groups, due date editing in the row, bulk actions, and the next occurrence of a recurring task.
